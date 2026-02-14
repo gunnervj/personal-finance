@@ -1,0 +1,115 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_DB: personalfinance
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d personalfinance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/personalfinance
+      KC_DB_SCHEMA: public
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: admin
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200\\|UP'"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  keycloak-setup:
+    image: curlimages/curl:latest
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ./infrastructure/keycloak/setup-keycloak.sh:/setup-keycloak.sh
+    entrypoint: ["sh", "/setup-keycloak.sh"]
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./data/avatars:/app/avatars
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_HTTP_PORT: "8081"
+
+  budget-service:
+    build:
+      context: ./services/budget-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_HTTP_PORT: "8082"
+
+  transaction-service:
+    build:
+      context: ./services/transaction-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      QUARKUS_HTTP_PORT: "8083"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - keycloak
+      - user-service
+      - budget-service
+      - transaction-service
+    environment:
+      NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
+      NEXT_PUBLIC_KEYCLOAK_REALM: personal-finance
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: frontend
+      NEXT_PUBLIC_USER_SERVICE_URL: http://localhost:8081
+      NEXT_PUBLIC_BUDGET_SERVICE_URL: http://localhost:8082
+      NEXT_PUBLIC_TRANSACTION_SERVICE_URL: http://localhost:8083
+
+volumes:
+  pgdata:

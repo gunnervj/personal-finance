@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-create-budget-items" author="personal-finance">
+        <createTable tableName="budget_items" schemaName="budget_schema">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="budget_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expense_type_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="DECIMAL(12,2)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_one_time" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="budget_schema"
+            baseTableName="budget_items"
+            baseColumnNames="budget_id"
+            referencedTableSchemaName="budget_schema"
+            referencedTableName="budgets"
+            referencedColumnNames="id"
+            constraintName="fk_budget_items_budget"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="budget_schema"
+            baseTableName="budget_items"
+            baseColumnNames="expense_type_id"
+            referencedTableSchemaName="budget_schema"
+            referencedTableName="expense_types"
+            referencedColumnNames="id"
+            constraintName="fk_budget_items_expense_type"
+            onDelete="RESTRICT"/>
+
+        <addUniqueConstraint
+            schemaName="budget_schema"
+            tableName="budget_items"
+            columnNames="budget_id, expense_type_id"
+            constraintName="uq_budget_items_budget_expense_type"/>
+    </changeSet>
+
+</databaseChangeLog>

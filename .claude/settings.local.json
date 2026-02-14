@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(cat:*)",
+      "Bash(java:*)",
+      "Bash(brew install:*)",
+      "Bash(quarkus create app:*)",
+      "Bash(node --version:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

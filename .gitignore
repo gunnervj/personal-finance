@@ -1,0 +1,40 @@
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java / Quarkus
+target/
+*.class
+*.jar
+*.war
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Docker volumes
+data/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build
+dist/
+build/
+
+# Environment
+.env
+!.env.example
