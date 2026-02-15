@@ -112,7 +112,16 @@ services:
       - user-service
       - budget-service
       - transaction-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
+      # NextAuth Configuration
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-secret-change-in-production-min-32-chars
+      KEYCLOAK_ID: frontend
+      KEYCLOAK_SECRET: ""
+      KEYCLOAK_ISSUER: http://host.docker.internal:8080/realms/personal-finance
+      # Public Environment Variables
       NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
       NEXT_PUBLIC_KEYCLOAK_REALM: personal-finance
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: frontend
