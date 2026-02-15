@@ -7,11 +7,13 @@ A comprehensive personal finance management application built with microservices
 ### Tech Stack
 
 **Frontend:**
-- Next.js 15 with App Router
+- Next.js 16 with App Router
 - React 19
 - TypeScript
-- TailwindCSS (dark mode)
-- Planned: React Query, Chart.js, Framer Motion
+- TailwindCSS v4 (dark mode)
+- NextAuth.js 4.24 (Keycloak integration)
+- Lucide React (icons)
+- Inter + Poppins fonts
 
 **Backend:**
 - Quarkus 3.31.3 (Java)
@@ -29,11 +31,11 @@ A comprehensive personal finance management application built with microservices
 
 | Service | Port | Responsibility |
 |---------|------|----------------|
-| **user-service** | 8081 | User preferences, avatar management |
-| **budget-service** | 8082 | Expense types, budgets, budget items |
-| **transaction-service** | 8083 | Transaction CRUD, aggregations |
-| **Keycloak** | 8080 | Authentication, user management |
-| **Frontend** | 3000 | Next.js UI (not yet started) |
+| **user-service** | 8081 | User preferences, avatar management, JWT auth |
+| **budget-service** | 8082 | Expense types, budgets, budget items, JWT auth |
+| **transaction-service** | 8083 | Transaction CRUD, aggregations, JWT auth |
+| **Keycloak** | 8080 | Authentication, user management, JWT tokens |
+| **Frontend** | 3000 | Next.js UI with NextAuth.js |
 
 ## 🚀 Quick Start
 
@@ -50,22 +52,40 @@ A comprehensive personal finance management application built with microservices
 # Clone the repository
 cd personal-finance
 
-# Start all services
+# Start backend services (PostgreSQL, Keycloak, microservices)
 docker-compose up -d
 
 # Check service health
 docker-compose ps
 
+# Start frontend (runs outside Docker for hot reload)
+cd frontend
+npm install
+npm run dev
+
 # View logs
 docker-compose logs -f user-service
 ```
 
+**Note**: Frontend runs on host machine (not in Docker) for faster development and hot module replacement.
+
 ### Accessing Services
+
+- **Frontend Application**: http://localhost:3000
+  - Landing page with "Get Started" button
+  - Login via Keycloak
+  - Dashboard (protected route)
 
 - **Keycloak Admin Console**: http://localhost:8080/admin
   - Username: `admin`
   - Password: `admin`
   - Realm: `personal-finance`
+  - Clients: `frontend`, `user-service`, `budget-service`, `transaction-service`
+
+- **API Endpoints** (requires JWT token):
+  - `GET /api/v1/users/me` - Returns current user info (user-service)
+  - `GET /api/v1/test/me` - Test endpoint (budget-service)
+  - `GET /api/v1/test/me` - Test endpoint (transaction-service)
 
 - **Health Endpoints**:
   - user-service: http://localhost:8081/q/health
@@ -151,22 +171,47 @@ Default preferences structure:
 **Realm**: `personal-finance`
 
 **Clients**:
-- `frontend` (public) - Authorization code flow for Next.js
-- `backend` (confidential) - JWT validation for microservices
+- `frontend` (public) - Authorization code flow with NextAuth.js
+- `user-service` (confidential) - Service account with client credentials
+- `budget-service` (confidential) - Service account with client credentials
+- `transaction-service` (confidential) - Service account with client credentials
 
 **Features**:
 - Email as username (users log in with email)
-- User registration enabled
+- User registration enabled at `/realms/personal-finance/protocol/openid-connect/registrations`
 - Email claim included in JWT access tokens
 - Password reset enabled
+- Separate clients per microservice for security isolation
+
+### NextAuth.js Integration
+
+The frontend uses NextAuth.js v4 with Keycloak provider:
+- **Session strategy**: JWT (stateless)
+- **Login page**: `/login`
+- **Protected routes**: Middleware guards `/dashboard`, `/budgets`, `/transactions`
+- **API route**: `/api/auth/[...nextauth]` handles OAuth callbacks
+- **Token storage**: JWT tokens in session (access_token, id_token, refresh_token)
 
 ### Auto-Configuration
 
 Keycloak is automatically configured on startup via `/infrastructure/keycloak/setup-keycloak.sh`:
-- Creates realm and clients
+- Creates `personal-finance` realm
+- Creates 4 clients (frontend + 3 backend services)
 - Configures email as username
-- Adds email protocol mapper
+- Adds email protocol mapper to JWT tokens
+- Configures master realm for HTTP (local dev only)
 - Idempotent (safe to re-run)
+
+### Authentication Flow
+
+1. User clicks "Sign In" on frontend
+2. Redirected to Keycloak login page
+3. User enters email/password or registers
+4. Keycloak issues authorization code
+5. NextAuth exchanges code for JWT tokens
+6. Frontend stores tokens in session
+7. API calls include `Authorization: Bearer <access_token>`
+8. Backend services validate JWT via Keycloak public keys
 
 ## 🛠️ Development
 
@@ -297,6 +342,48 @@ personal-finance/
 - ⚠️ Passwords in docker-compose (development only)
 
 **For Production**: Use secrets management, enable TLS, use strong passwords, implement rate limiting.
+
+## 🎨 Design System
+
+### Theme
+
+**Mode**: Dark mode only
+
+**Color Palette** (based on `sample_dashboard_design.png`):
+- **Background**: Deep navy blue (#0a0e27, #0d1130)
+- **Cards**: Darker blue (#111936)
+- **Primary**: Electric blue (#0ea5e9)
+- **Borders**: Subtle with low opacity (#1e2a52)
+- **Text**: White (#ffffff) and muted gray (#94a3b8)
+
+**Typography**:
+- **Headings**: Poppins (600 weight, -0.02em letter spacing)
+- **Body**: Inter (14px base, 400-600 weight)
+- **Hierarchy**: Clear font sizes and weights for readability
+
+**Components**:
+- **Sidebar**: Collapsible, active state with blue accent bar
+- **Cards**: Rounded (rounded-2xl), subtle blue glow on hover
+- **Buttons**: Electric blue with shadow, clean modern style
+- **Icons**: Lucide React icon set
+- **Animations**: Subtle hover effects, smooth transitions
+
+**Layout**:
+- **Responsive**: Mobile-first with breakpoints
+- **Sidebar**: 256px wide (desktop), slide-in drawer (mobile)
+- **Spacing**: Consistent padding and margins
+- **Grid**: Flexible grid for dashboard widgets
+
+### Resources
+
+Design references are stored in `/resources/`:
+- `sample_dashboard_design.png` - Main theme reference
+- `table_design.png` - Table component reference
+- `logos.jpeg` - Original logo file
+
+Logo files in `/frontend/public/`:
+- `logo.png` - Transparent background version
+- `logo.jpg` - Original with background
 
 ## 🧪 Testing
 
