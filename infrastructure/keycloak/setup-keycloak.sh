@@ -44,6 +44,14 @@ if [ -z "$ADMIN_TOKEN" ]; then
 fi
 echo "Admin token obtained."
 
+# Update master realm to not require SSL (for local development)
+echo "Configuring master realm for HTTP access..."
+curl -s -X PUT "${KEYCLOAK_URL}/admin/realms/master" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"sslRequired": "none"}'
+echo "Master realm configured for HTTP."
+
 # Check if realm already exists
 echo "Checking if realm '${REALM_NAME}' exists..."
 REALM_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
