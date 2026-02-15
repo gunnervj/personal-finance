@@ -6,11 +6,11 @@ Track progress against the original plan for the Personal Finance Management Sys
 
 ## Overall Status
 
-**Current Phase**: Phase 2 Complete ✅ | Phase 3 Ready to Start ⏳
+**Current Phase**: Phase 3 Complete ✅ | Phase 4 Ready to Start ⏳
 
-**Timeline**: Started Feb 14, 2026 | Phase 2 Completed Feb 15, 2026
+**Timeline**: Started Feb 14, 2026 | Phase 3 Completed Feb 15, 2026
 
-**Completion**: 22% (Phases 1-2 of 9 complete)
+**Completion**: 33% (Phases 1-3 of 9 complete)
 
 ---
 
@@ -163,40 +163,72 @@ Track progress against the original plan for the Personal Finance Management Sys
 
 ---
 
-## 🔜 Phase 3: User Preferences & Onboarding - NEXT
+## ✅ Phase 3: User Preferences & Onboarding - COMPLETE
 
-**Status**: 🔜 **Pending**
-**Estimated Duration**: 3-4 hours
-
-**Note**: Theme redesign was completed in Phase 2 ✅
+**Status**: ✅ **100% Complete**
+**Duration**: ~2 hours
+**Completed**: Feb 15, 2026
 
 ### Backend Tasks
 
-- [ ] `UserPreferences` entity (Panache Active Record)
-- [ ] `UserPreferencesResource` REST endpoints
-  - [ ] `GET /api/v1/users/preferences` - Get user preferences
-  - [ ] `POST /api/v1/users/preferences` - Create/update preferences
-  - [ ] `PUT /api/v1/users/preferences` - Update preferences
-- [ ] Avatar upload endpoint (`POST /api/v1/users/avatar`)
-- [ ] Avatar serve endpoint (`GET /api/v1/users/avatar`)
-- [ ] Validation for preferences JSONB structure
-- [ ] Default preferences initialization
+- [x] `UserPreferences` entity (Panache Active Record)
+- [x] `UserPreferencesResource` REST endpoints
+  - [x] `GET /api/v1/users/preferences` - Get user preferences
+  - [x] `POST /api/v1/users/preferences` - Create/update preferences
+  - [x] `PUT /api/v1/users/preferences` - Update preferences
+- [x] Avatar upload endpoint (`POST /api/v1/users/avatar`)
+- [x] Avatar serve endpoint (`GET /api/v1/users/avatar`)
+- [x] Avatar delete endpoint (`DELETE /api/v1/users/avatar`)
+- [x] Validation for preferences JSONB structure
+- [x] Default preferences initialization
 
 ### Frontend Tasks
 
 - [x] Theme already complete ✅ (Phase 2)
-- [ ] Create PreferencesModal component
-- [ ] First-time user detection (no preferences = show modal)
-- [ ] Currency selector (USD default for MVP)
-- [ ] Emergency fund target input (3-6 months selector)
-- [ ] After-tax monthly salary input
-- [ ] Avatar upload component
-- [ ] Default avatar generation (initials-based)
-- [ ] Cannot skip modal (required fields)
-- [ ] Font configuration (Garamond, Lato)
-- [ ] Shared UI components (Modal, Card, Widget, Button, Input, Select, Avatar)
-- [ ] PreferencesModal component
-- [ ] First-time user flow logic
+- [x] Shared UI components (Modal, Card, Button, Input, Select, Avatar)
+- [x] PreferencesModal component
+- [x] First-time user detection (no preferences = show modal)
+- [x] Currency selector (USD default for MVP)
+- [x] Emergency fund target input (1-12 months selector)
+- [x] After-tax monthly salary input
+- [x] Avatar upload component with preview
+- [x] Default avatar generation (initials-based)
+- [x] Cannot skip modal (required fields + validation)
+- [x] First-time user flow logic
+- [x] API client for preferences
+- [x] Avatar upload proxy endpoint
+
+### Key Achievements
+
+- ✅ Native Hibernate JSONB support (no external dependencies)
+- ✅ Clean, reusable UI component library
+- ✅ Modal with smooth animations
+- ✅ Avatar upload with 5MB limit and type validation
+- ✅ Initials-based avatar fallback
+- ✅ Seamless onboarding flow on first login
+- ✅ Form validation with error messages
+
+### Files Created
+
+**Backend** (user-service):
+- `entity/UserPreferences.java` - Panache entity with JSONB
+- `resource/UserPreferencesResource.java` - REST endpoints
+- `resource/AvatarResource.java` - Avatar upload/download/delete
+- `dto/PreferencesRequest.java` - Request DTO with validation
+- `dto/PreferencesResponse.java` - Response DTO
+
+**Frontend**:
+- `components/ui/Button.tsx` - Button component
+- `components/ui/Input.tsx` - Input component
+- `components/ui/Select.tsx` - Select component
+- `components/ui/Card.tsx` - Card component
+- `components/ui/Modal.tsx` - Modal component
+- `components/ui/Avatar.tsx` - Avatar component
+- `components/ui/index.ts` - Barrel export
+- `components/PreferencesModal.tsx` - Onboarding modal
+- `lib/api/preferences.ts` - Preferences API client
+- `app/api/avatar/upload/route.ts` - Avatar upload proxy
+- `app/dashboard/DashboardClient.tsx` - Client component with onboarding
 
 ---
 
