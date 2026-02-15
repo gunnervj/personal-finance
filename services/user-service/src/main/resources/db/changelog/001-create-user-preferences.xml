@@ -13,7 +13,7 @@
             <column name="email" type="VARCHAR(255)">
                 <constraints nullable="false" unique="true"/>
             </column>
-            <column name="preferences" type="JSONB" defaultValue="'{}'::jsonb">
+            <column name="preferences" type="JSONB" defaultValueComputed="'{}'::jsonb">
                 <constraints nullable="false"/>
             </column>
             <column name="avatar_path" type="VARCHAR(500)"/>
