@@ -63,6 +63,8 @@ services:
         condition: service_started
     environment:
       QUARKUS_HTTP_PORT: "8081"
+      QUARKUS_OIDC_CLIENT_ID: "user-service"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: "user-service-secret"
 
   budget-service:
     build:
@@ -77,6 +79,8 @@ services:
         condition: service_started
     environment:
       QUARKUS_HTTP_PORT: "8082"
+      QUARKUS_OIDC_CLIENT_ID: "budget-service"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: "budget-service-secret"
 
   transaction-service:
     build:
@@ -91,6 +95,8 @@ services:
         condition: service_started
     environment:
       QUARKUS_HTTP_PORT: "8083"
+      QUARKUS_OIDC_CLIENT_ID: "transaction-service"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: "transaction-service-secret"
 
   frontend:
     build:
