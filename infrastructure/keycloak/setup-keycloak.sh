@@ -16,8 +16,14 @@ ADMIN_USER="admin"
 ADMIN_PASSWORD="admin"
 REALM_NAME="personal-finance"
 FRONTEND_CLIENT_ID="frontend"
-BACKEND_CLIENT_ID="backend"
-BACKEND_CLIENT_SECRET="backend-secret"
+
+# Backend service clients (one per microservice)
+USER_SERVICE_CLIENT="user-service"
+USER_SERVICE_SECRET="user-service-secret"
+BUDGET_SERVICE_CLIENT="budget-service"
+BUDGET_SERVICE_SECRET="budget-service-secret"
+TRANSACTION_SERVICE_CLIENT="transaction-service"
+TRANSACTION_SERVICE_SECRET="transaction-service-secret"
 
 echo "=== Keycloak Setup Script ==="
 echo "Waiting for Keycloak to be fully ready..."
@@ -140,44 +146,53 @@ else
 fi
 echo "Frontend client configured."
 
-# Create or update backend client (confidential)
-echo "Setting up backend client..."
-BACKEND_CLIENT_RESPONSE=$(curl -s \
-  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients?clientId=${BACKEND_CLIENT_ID}")
+# Function to create or update a backend service client
+create_backend_client() {
+  local CLIENT_ID=$1
+  local CLIENT_SECRET=$2
 
-BACKEND_CLIENT_UUID=""
-if echo "$BACKEND_CLIENT_RESPONSE" | grep -q "\"clientId\":\"${BACKEND_CLIENT_ID}\""; then
-  BACKEND_CLIENT_UUID=$(echo "$BACKEND_CLIENT_RESPONSE" | sed -n 's/.*"id":"\([^"]*\)".*"clientId":"backend".*/\1/p')
-  echo "Backend client already exists (UUID: ${BACKEND_CLIENT_UUID}). Updating..."
-  curl -s -X PUT "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients/${BACKEND_CLIENT_UUID}" \
+  echo "Setting up ${CLIENT_ID} client..."
+  local CLIENT_RESPONSE=$(curl -s \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"clientId\": \"${BACKEND_CLIENT_ID}\",
-      \"enabled\": true,
-      \"publicClient\": false,
-      \"secret\": \"${BACKEND_CLIENT_SECRET}\",
-      \"directAccessGrantsEnabled\": false,
-      \"serviceAccountsEnabled\": true,
-      \"standardFlowEnabled\": false
-    }"
-else
-  echo "Creating backend client..."
-  curl -s -X POST "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients" \
-    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"clientId\": \"${BACKEND_CLIENT_ID}\",
-      \"enabled\": true,
-      \"publicClient\": false,
-      \"secret\": \"${BACKEND_CLIENT_SECRET}\",
-      \"directAccessGrantsEnabled\": false,
-      \"serviceAccountsEnabled\": true,
-      \"standardFlowEnabled\": false
-    }"
-fi
-echo "Backend client configured."
+    "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients?clientId=${CLIENT_ID}")
+
+  if echo "$CLIENT_RESPONSE" | grep -q "\"clientId\":\"${CLIENT_ID}\""; then
+    local CLIENT_UUID=$(echo "$CLIENT_RESPONSE" | sed -n "s/.*\"id\":\"\([^\"]*\)\".*\"clientId\":\"${CLIENT_ID}\".*/\1/p")
+    echo "${CLIENT_ID} already exists (UUID: ${CLIENT_UUID}). Updating..."
+    curl -s -X PUT "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients/${CLIENT_UUID}" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"clientId\": \"${CLIENT_ID}\",
+        \"enabled\": true,
+        \"publicClient\": false,
+        \"secret\": \"${CLIENT_SECRET}\",
+        \"directAccessGrantsEnabled\": false,
+        \"serviceAccountsEnabled\": true,
+        \"standardFlowEnabled\": false
+      }"
+  else
+    echo "Creating ${CLIENT_ID}..."
+    curl -s -X POST "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"clientId\": \"${CLIENT_ID}\",
+        \"enabled\": true,
+        \"publicClient\": false,
+        \"secret\": \"${CLIENT_SECRET}\",
+        \"directAccessGrantsEnabled\": false,
+        \"serviceAccountsEnabled\": true,
+        \"standardFlowEnabled\": false
+      }"
+  fi
+  echo "${CLIENT_ID} configured."
+}
+
+# Create backend service clients
+create_backend_client "${USER_SERVICE_CLIENT}" "${USER_SERVICE_SECRET}"
+create_backend_client "${BUDGET_SERVICE_CLIENT}" "${BUDGET_SERVICE_SECRET}"
+create_backend_client "${TRANSACTION_SERVICE_CLIENT}" "${TRANSACTION_SERVICE_SECRET}"
 
 # Add email protocol mapper to frontend client to ensure email is in access token
 echo "Adding email protocol mapper to frontend client..."
@@ -215,6 +230,9 @@ echo ""
 echo "=== Keycloak Setup Complete ==="
 echo "Realm: ${REALM_NAME}"
 echo "Frontend Client: ${FRONTEND_CLIENT_ID} (public)"
-echo "Backend Client: ${BACKEND_CLIENT_ID} (confidential)"
+echo "Backend Clients (confidential):"
+echo "  - ${USER_SERVICE_CLIENT}"
+echo "  - ${BUDGET_SERVICE_CLIENT}"
+echo "  - ${TRANSACTION_SERVICE_CLIENT}"
 echo "Registration: enabled (email as username)"
 echo "Keycloak Admin: ${KEYCLOAK_URL}/admin"
