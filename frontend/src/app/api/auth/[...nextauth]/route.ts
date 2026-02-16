@@ -31,6 +31,26 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  events: {
+    async signOut({ token }) {
+      if (token?.idToken) {
+        try {
+          const issuerUrl = process.env.KEYCLOAK_ISSUER!;
+          const logoutUrl = `${issuerUrl}/protocol/openid-connect/logout`;
+          await fetch(logoutUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              id_token_hint: token.idToken as string,
+              client_id: process.env.KEYCLOAK_ID!,
+            }),
+          });
+        } catch (error) {
+          console.error("Error during Keycloak logout:", error);
+        }
+      }
+    },
+  },
 };
 
 const handler = NextAuth(authOptions);

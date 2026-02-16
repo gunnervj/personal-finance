@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { Modal, Input, Select, Button, Avatar } from './ui';
-import { Upload } from 'lucide-react';
+import { Upload, LogOut } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 interface PreferencesFormData {
   currency: string;
@@ -21,6 +22,7 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
   onSave,
   userEmail
 }) => {
+  const userName = userEmail.split('@')[0];
   const [formData, setFormData] = useState<PreferencesFormData>({
     currency: 'USD',
     emergencyFundMonths: 3,
@@ -99,6 +101,15 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={() => {}} title="Welcome! Let's set up your account" canClose={false}>
+      <div className="mb-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+        <h3 className="text-lg font-semibold text-blue-300 mb-2">
+          👋 Welcome, {userName}!
+        </h3>
+        <p className="text-sm text-gray-300">
+          Let's get your account set up with a few quick preferences. This will help us
+          personalize your financial management experience.
+        </p>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex flex-col items-center space-y-4">
           <Avatar src={avatarPreview} name={userEmail} size="lg" />
@@ -154,6 +165,21 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
         <Button type="submit" variant="primary" className="w-full" disabled={loading}>
           {loading ? 'Saving...' : 'Get Started'}
         </Button>
+
+        <button
+          type="button"
+          onClick={() => {
+            // Clear local storage and session storage
+            localStorage.clear();
+            sessionStorage.clear();
+            // Sign out from NextAuth and Keycloak
+            signOut({ callbackUrl: '/login' });
+          }}
+          className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign out and start fresh
+        </button>
       </form>
     </Modal>
   );

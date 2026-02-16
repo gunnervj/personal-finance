@@ -15,12 +15,17 @@ class ApiClient {
 
   private async getHeaders(): Promise<HeadersInit> {
     const session = await getSession();
+    console.log('Session in API client:', session);
+
     const headers: HeadersInit = {
       "Content-Type": "application/json",
     };
 
     if (session?.accessToken) {
       headers["Authorization"] = `Bearer ${session.accessToken}`;
+      console.log('Added Authorization header');
+    } else {
+      console.warn('No access token in session!');
     }
 
     return headers;
@@ -37,6 +42,8 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.getServiceUrl(service)}${endpoint}`;
     const headers = await this.getHeaders();
+
+    console.log('API Request:', { url, method: options.method || 'GET', headers });
 
     const response = await fetch(url, {
       ...options,
@@ -60,6 +67,7 @@ class ApiClient {
         // Response is not JSON, use statusText
       }
 
+      console.error('API Error:', error);
       throw error;
     }
 

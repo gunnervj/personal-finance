@@ -1,6 +1,5 @@
 package com.personalfinance.userservice.entity;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -12,7 +11,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "user_preferences", schema = "user_schema")
-public class UserPreferences extends PanacheEntityBase {
+public class UserPreferences {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -46,19 +45,5 @@ public class UserPreferences extends PanacheEntityBase {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public static UserPreferences findByEmail(String email) {
-        return find("email", email).firstResult();
-    }
-
-    public static UserPreferences createDefault(String email) {
-        UserPreferences prefs = new UserPreferences();
-        prefs.email = email;
-        prefs.preferences = new HashMap<>();
-        prefs.preferences.put("currency", "USD");
-        prefs.preferences.put("emergencyFundMonths", 3);
-        prefs.preferences.put("monthlySalary", 0.0);
-        return prefs;
     }
 }

@@ -19,11 +19,16 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
   const checkPreferences = async () => {
     try {
       const prefs = await preferencesApi.getPreferences();
+      console.log('Preferences response:', prefs);
+      console.log('Is first time?', prefs.isFirstTime);
       if (prefs.isFirstTime) {
+        console.log('Showing preferences modal');
         setShowPreferencesModal(true);
       }
     } catch (error) {
       console.error('Failed to fetch preferences:', error);
+      // Show modal on error too (first-time user might not have preferences yet)
+      setShowPreferencesModal(true);
     } finally {
       setLoading(false);
     }
@@ -33,15 +38,26 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
     data: { currency: string; emergencyFundMonths: number; monthlySalary: number },
     avatarFile?: File
   ) => {
-    // Upload avatar first if provided
-    if (avatarFile) {
-      await preferencesApi.uploadAvatar(avatarFile);
+    try {
+      console.log('Saving preferences:', data);
+
+      // Upload avatar first if provided
+      if (avatarFile) {
+        console.log('Uploading avatar...');
+        await preferencesApi.uploadAvatar(avatarFile);
+        console.log('Avatar uploaded successfully');
+      }
+
+      // Save preferences
+      console.log('Saving preferences to backend...');
+      const result = await preferencesApi.savePreferences(data);
+      console.log('Preferences saved successfully:', result);
+
+      setShowPreferencesModal(false);
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      throw error; // Re-throw so PreferencesModal can handle it
     }
-
-    // Save preferences
-    await preferencesApi.savePreferences(data);
-
-    setShowPreferencesModal(false);
   };
 
   if (loading) {
