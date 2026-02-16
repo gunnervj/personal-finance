@@ -6,11 +6,11 @@ Track progress against the original plan for the Personal Finance Management Sys
 
 ## Overall Status
 
-**Current Phase**: Phase 3 Complete ✅ | Phase 4 Ready to Start ⏳
+**Current Phase**: Phase 4 Complete ✅ | Phase 5 Ready to Start ⏳
 
-**Timeline**: Started Feb 14, 2026 | Phase 3 Completed Feb 15, 2026
+**Timeline**: Started Feb 14, 2026 | Phase 4 Completed Feb 16, 2026
 
-**Completion**: 33% (Phases 1-3 of 9 complete)
+**Completion**: 44% (Phases 1-4 of 9 complete)
 
 ---
 
@@ -232,30 +232,86 @@ Track progress against the original plan for the Personal Finance Management Sys
 
 ---
 
-## 🔜 Phase 4: Budget Backend
+## ✅ Phase 4: Budget Backend - COMPLETE
 
-**Status**: 🔜 **Pending**
-**Estimated Duration**: 4-5 hours
+**Status**: ✅ **100% Complete**
+**Duration**: ~3 hours
+**Completed**: Feb 16, 2026
 
-### Tasks
+### Architecture
 
-- [ ] `ExpenseType` entity with icon field
-- [ ] `ExpenseTypeResource` with CRUD + delete protection
-- [ ] `Budget` entity with year/month validation
-- [ ] `BudgetResource` with business rule enforcement
-- [ ] `BudgetItem` entity with FK relationships
-- [ ] `BudgetItemResource` for nested operations
-- [ ] Budget copy logic endpoint
-- [ ] Budget summary calculation endpoint
+- [x] Clean layered architecture (Entity → Repository → Service → Resource)
+- [x] Swagger/OpenAPI documentation
+- [x] OIDC token issuer configuration
+- [x] Jakarta Bean Validation
 
-### Business Rules to Implement
+### Entities Created
 
-- Cannot create budgets for past years
-- Cannot create future year budgets (except December → next year)
-- Cannot delete expense types used in budget items
-- Unique constraint: user + expense type name
-- Unique constraint: user + year + month
-- Unique constraint: budget + expense type
+- [x] `ExpenseType` - Budget categories with icons and mandatory flags
+- [x] `Budget` - Monthly budgets with year/month tracking
+- [x] `BudgetItem` - Line items linking budgets to expense types
+
+### Repositories
+
+- [x] `ExpenseTypeRepository` - Data access with custom queries
+- [x] `BudgetRepository` - Find by user/year/month
+- [x] `BudgetItemRepository` - Manage budget line items
+
+### Services (Business Logic)
+
+- [x] `ExpenseTypeService` - CRUD with delete protection
+- [x] `BudgetService` - Budget lifecycle management
+
+### REST Endpoints
+
+**Expense Types** (`/api/v1/expense-types`):
+- [x] GET - List all expense types
+- [x] GET /{id} - Get specific expense type
+- [x] POST - Create new expense type
+- [x] PUT /{id} - Update expense type
+- [x] DELETE /{id} - Delete (with usage protection)
+
+**Budgets** (`/api/v1/budgets`):
+- [x] GET - List all budgets
+- [x] GET /year/{year} - List budgets by year
+- [x] GET /{year}/{month} - Get specific budget
+- [x] POST - Create budget with items
+- [x] PUT /{year}/{month} - Update budget items
+- [x] DELETE /{year}/{month} - Delete budget
+- [x] POST /copy - Copy budget between months
+
+### Business Rules Implemented
+
+- [x] Cannot create budgets for past years
+- [x] Cannot create future year budgets (except December → next year)
+- [x] Cannot delete expense types used in budget items
+- [x] Unique constraint: user + expense type name
+- [x] Unique constraint: user + year + month
+- [x] Unique constraint: budget + expense type
+- [x] Validate expense type ownership
+- [x] Cascade delete for budget items
+
+### DTOs
+
+- [x] `ExpenseTypeRequest` / `ExpenseTypeResponse`
+- [x] `BudgetRequest` / `BudgetResponse`
+- [x] `BudgetItemRequest` / `BudgetItemResponse`
+
+### Key Achievements
+
+- ✅ Complete CRUD operations for all entities
+- ✅ Comprehensive business rule enforcement
+- ✅ Full API documentation via Swagger UI
+- ✅ Proper error handling (404, 400 with messages)
+- ✅ Transactional integrity
+- ✅ Budget copy functionality
+- ✅ Delete protection for used expense types
+- ✅ Clean separation of concerns
+
+### API Documentation
+
+**Swagger UI**: http://localhost:8082/swagger-ui
+**OpenAPI JSON**: http://localhost:8082/openapi
 
 ---
 
