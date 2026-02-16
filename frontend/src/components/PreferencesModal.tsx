@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Modal, Input, Select, Button, Avatar } from './ui';
 import { Upload, LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { useToast } from './ui/Toast';
 
 interface PreferencesFormData {
   currency: string;
@@ -34,6 +35,8 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
   const [errors, setErrors] = useState<Partial<PreferencesFormData>>({});
   const [loading, setLoading] = useState(false);
 
+  const { showError } = useToast();
+
   const emergencyFundOptions = [
     { value: '1', label: '1 month' },
     { value: '2', label: '2 months' },
@@ -48,12 +51,12 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
+        showError('File size must be less than 5MB');
         return;
       }
 
       if (!file.type.startsWith('image/')) {
-        alert('Only image files are allowed');
+        showError('Only image files are allowed');
         return;
       }
 
@@ -92,8 +95,7 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
     try {
       await onSave(formData, avatarFile || undefined);
     } catch (error) {
-      console.error('Failed to save preferences:', error);
-      alert('Failed to save preferences. Please try again.');
+      showError(error instanceof Error ? error.message : 'Failed to save preferences. Please try again.');
     } finally {
       setLoading(false);
     }

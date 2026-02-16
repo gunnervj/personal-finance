@@ -25,7 +25,7 @@ import java.util.List;
 @Authenticated
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Budgets", description = "Manage monthly budgets")
+@Tag(name = "Budgets", description = "Manage yearly budgets")
 @SecurityRequirement(name = "bearer")
 public class BudgetResource {
 
@@ -49,30 +49,18 @@ public class BudgetResource {
     }
 
     @GET
-    @Path("/year/{year}")
-    @Operation(summary = "Get budgets by year", description = "Retrieve budgets for a specific year")
-    @APIResponse(responseCode = "200", description = "List of budgets for the year")
-    public Response getBudgetsByYear(@PathParam("year") Integer year) {
-        List<BudgetResponse> budgets = service.getBudgetsByYear(extractEmail(), year);
-        return Response.ok(budgets).build();
-    }
-
-    @GET
-    @Path("/{year}/{month}")
-    @Operation(summary = "Get budget by year and month", description = "Retrieve a specific budget")
+    @Path("/{year}")
+    @Operation(summary = "Get budget by year", description = "Retrieve budget for a specific year")
     @APIResponse(responseCode = "200", description = "Budget found",
         content = @Content(schema = @Schema(implementation = BudgetResponse.class)))
     @APIResponse(responseCode = "404", description = "Budget not found")
-    public Response getBudget(
-        @PathParam("year") Integer year,
-        @PathParam("month") Integer month
-    ) {
-        BudgetResponse budget = service.getBudget(extractEmail(), year, month);
+    public Response getBudget(@PathParam("year") Integer year) {
+        BudgetResponse budget = service.getBudget(extractEmail(), year);
         return Response.ok(budget).build();
     }
 
     @POST
-    @Operation(summary = "Create budget", description = "Create a new monthly budget with items")
+    @Operation(summary = "Create budget", description = "Create a new yearly budget with items")
     @APIResponse(responseCode = "201", description = "Budget created",
         content = @Content(schema = @Schema(implementation = BudgetResponse.class)))
     @APIResponse(responseCode = "400", description = "Invalid request or business rule violation")
@@ -86,45 +74,39 @@ public class BudgetResource {
     }
 
     @PUT
-    @Path("/{year}/{month}")
+    @Path("/{year}")
     @Operation(summary = "Update budget", description = "Update budget items for an existing budget")
     @APIResponse(responseCode = "200", description = "Budget updated")
     @APIResponse(responseCode = "404", description = "Budget not found")
     public Response updateBudget(
         @PathParam("year") Integer year,
-        @PathParam("month") Integer month,
         List<@Valid BudgetItemRequest> items
     ) {
-        BudgetResponse budget = service.updateBudget(extractEmail(), year, month, items);
+        BudgetResponse budget = service.updateBudget(extractEmail(), year, items);
         return Response.ok(budget).build();
     }
 
     @DELETE
-    @Path("/{year}/{month}")
+    @Path("/{year}")
     @Operation(summary = "Delete budget", description = "Delete a budget and all its items")
     @APIResponse(responseCode = "204", description = "Budget deleted")
     @APIResponse(responseCode = "404", description = "Budget not found")
-    public Response deleteBudget(
-        @PathParam("year") Integer year,
-        @PathParam("month") Integer month
-    ) {
-        service.deleteBudget(extractEmail(), year, month);
+    public Response deleteBudget(@PathParam("year") Integer year) {
+        service.deleteBudget(extractEmail(), year);
         return Response.noContent().build();
     }
 
     @POST
     @Path("/copy")
-    @Operation(summary = "Copy budget", description = "Copy a budget from one month to another")
+    @Operation(summary = "Copy budget", description = "Copy a budget from one year to another")
     @APIResponse(responseCode = "201", description = "Budget copied successfully")
     @APIResponse(responseCode = "404", description = "Source budget not found")
     @APIResponse(responseCode = "400", description = "Invalid request or business rule violation")
     public Response copyBudget(
         @Parameter(description = "Source year") @QueryParam("fromYear") Integer fromYear,
-        @Parameter(description = "Source month") @QueryParam("fromMonth") Integer fromMonth,
-        @Parameter(description = "Target year") @QueryParam("toYear") Integer toYear,
-        @Parameter(description = "Target month") @QueryParam("toMonth") Integer toMonth
+        @Parameter(description = "Target year") @QueryParam("toYear") Integer toYear
     ) {
-        BudgetResponse budget = service.copyBudget(extractEmail(), fromYear, fromMonth, toYear, toMonth);
+        BudgetResponse budget = service.copyBudget(extractEmail(), fromYear, toYear);
         return Response.status(Response.Status.CREATED).entity(budget).build();
     }
 

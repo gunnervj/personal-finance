@@ -1,6 +1,8 @@
 package com.personalfinance.budgetservice.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -14,5 +16,9 @@ public record BudgetItemRequest(
     BigDecimal amount,
 
     @NotNull(message = "One-time flag is required")
-    Boolean isOneTime
+    Boolean isOneTime,
+
+    @Min(value = 1, message = "Applicable month must be between 1 and 12")
+    @Max(value = 12, message = "Applicable month must be between 1 and 12")
+    Integer applicableMonth
 ) {}

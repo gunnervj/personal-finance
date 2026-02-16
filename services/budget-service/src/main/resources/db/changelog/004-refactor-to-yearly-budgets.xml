@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-refactor-to-yearly-budgets" author="personal-finance">
+        <!-- Drop existing constraints -->
+        <dropUniqueConstraint
+            schemaName="budget_schema"
+            tableName="budgets"
+            constraintName="uq_budgets_user_year_month"/>
+
+        <dropUniqueConstraint
+            schemaName="budget_schema"
+            tableName="budget_items"
+            constraintName="uq_budget_items_budget_expense_type"/>
+
+        <!-- Remove month column from budgets -->
+        <dropColumn schemaName="budget_schema" tableName="budgets" columnName="month"/>
+
+        <!-- Add new unique constraint for yearly budgets -->
+        <addUniqueConstraint
+            schemaName="budget_schema"
+            tableName="budgets"
+            columnNames="user_email, year"
+            constraintName="uq_budgets_user_year"/>
+
+        <!-- Add applicable_month column to budget_items -->
+        <addColumn schemaName="budget_schema" tableName="budget_items">
+            <column name="applicable_month" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Add check constraint: if is_one_time is true, applicable_month must be set -->
+        <sql>
+            ALTER TABLE budget_schema.budget_items
+            ADD CONSTRAINT chk_one_time_month
+            CHECK (
+                (is_one_time = false AND applicable_month IS NULL) OR
+                (is_one_time = true AND applicable_month IS NOT NULL AND applicable_month BETWEEN 1 AND 12)
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

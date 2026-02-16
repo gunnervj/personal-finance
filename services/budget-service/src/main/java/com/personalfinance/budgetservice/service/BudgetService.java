@@ -37,27 +37,20 @@ public class BudgetService {
             .toList();
     }
 
-    public List<BudgetResponse> getBudgetsByYear(String userEmail, Integer year) {
-        return repository.findByUserEmailAndYear(userEmail, year).stream()
-            .map(this::toResponse)
-            .toList();
-    }
-
-    public BudgetResponse getBudget(String userEmail, Integer year, Integer month) {
-        Budget budget = repository.findByUserEmailAndYearAndMonth(userEmail, year, month)
-            .orElseThrow(() -> new NotFoundException("Budget not found"));
+    public BudgetResponse getBudget(String userEmail, Integer year) {
+        Budget budget = repository.findByUserEmailAndYear(userEmail, year)
+            .orElseThrow(() -> new NotFoundException("Budget not found for year " + year));
 
         return toResponse(budget);
     }
 
     @Transactional
     public BudgetResponse createBudget(String userEmail, BudgetRequest request, List<BudgetItemRequest> items) {
-        validateBudgetCreation(userEmail, request.year(), request.month());
+        validateBudgetCreation(userEmail, request.year());
 
         Budget budget = new Budget();
         budget.userEmail = userEmail;
         budget.year = request.year();
-        budget.month = request.month();
 
         repository.persist(budget);
 
@@ -70,9 +63,9 @@ public class BudgetService {
     }
 
     @Transactional
-    public BudgetResponse updateBudget(String userEmail, Integer year, Integer month, List<BudgetItemRequest> items) {
-        Budget budget = repository.findByUserEmailAndYearAndMonth(userEmail, year, month)
-            .orElseThrow(() -> new NotFoundException("Budget not found"));
+    public BudgetResponse updateBudget(String userEmail, Integer year, List<BudgetItemRequest> items) {
+        Budget budget = repository.findByUserEmailAndYear(userEmail, year)
+            .orElseThrow(() -> new NotFoundException("Budget not found for year " + year));
 
         // Delete existing items
         budgetItemRepository.deleteByBudgetId(budget.id);
@@ -86,29 +79,33 @@ public class BudgetService {
     }
 
     @Transactional
-    public void deleteBudget(String userEmail, Integer year, Integer month) {
-        Budget budget = repository.findByUserEmailAndYearAndMonth(userEmail, year, month)
-            .orElseThrow(() -> new NotFoundException("Budget not found"));
+    public void deleteBudget(String userEmail, Integer year) {
+        Budget budget = repository.findByUserEmailAndYear(userEmail, year)
+            .orElseThrow(() -> new NotFoundException("Budget not found for year " + year));
+
+        // TODO: Check if budget has transactions before allowing deletion
+        // Once transaction-service is implemented, add a check here:
+        // if (hasTransactions(budget.id)) {
+        //     throw new BadRequestException("Cannot delete budget with existing transactions");
+        // }
 
         // Budget items will be cascade deleted due to FK constraint
         repository.delete(budget);
     }
 
     @Transactional
-    public BudgetResponse copyBudget(String userEmail, Integer fromYear, Integer fromMonth,
-                                     Integer toYear, Integer toMonth) {
+    public BudgetResponse copyBudget(String userEmail, Integer fromYear, Integer toYear) {
         // Validate source budget exists
-        Budget sourceBudget = repository.findByUserEmailAndYearAndMonth(userEmail, fromYear, fromMonth)
-            .orElseThrow(() -> new NotFoundException("Source budget not found"));
+        Budget sourceBudget = repository.findByUserEmailAndYear(userEmail, fromYear)
+            .orElseThrow(() -> new NotFoundException("Source budget not found for year " + fromYear));
 
         // Validate target budget creation
-        validateBudgetCreation(userEmail, toYear, toMonth);
+        validateBudgetCreation(userEmail, toYear);
 
         // Create new budget
         Budget newBudget = new Budget();
         newBudget.userEmail = userEmail;
         newBudget.year = toYear;
-        newBudget.month = toMonth;
         repository.persist(newBudget);
 
         // Copy budget items
@@ -119,15 +116,15 @@ public class BudgetService {
             newItem.expenseTypeId = sourceItem.expenseTypeId;
             newItem.amount = sourceItem.amount;
             newItem.isOneTime = sourceItem.isOneTime;
+            newItem.applicableMonth = sourceItem.applicableMonth;
             budgetItemRepository.persist(newItem);
         }
 
         return toResponse(newBudget);
     }
 
-    private void validateBudgetCreation(String userEmail, Integer year, Integer month) {
+    private void validateBudgetCreation(String userEmail, Integer year) {
         LocalDate now = LocalDate.now();
-        LocalDate budgetDate = LocalDate.of(year, month, 1);
 
         // Cannot create budgets for past years
         if (year < now.getYear()) {
@@ -145,8 +142,8 @@ public class BudgetService {
         }
 
         // Check if budget already exists
-        if (repository.existsByUserEmailAndYearAndMonth(userEmail, year, month)) {
-            throw new BadRequestException("Budget for this month already exists");
+        if (repository.existsByUserEmailAndYear(userEmail, year)) {
+            throw new BadRequestException("Budget for year " + year + " already exists");
         }
     }
 
@@ -168,11 +165,20 @@ public class BudgetService {
 
         // Create budget items
         for (BudgetItemRequest itemRequest : items) {
+            // Validate one-time expense logic
+            if (itemRequest.isOneTime() && itemRequest.applicableMonth() == null) {
+                throw new BadRequestException("One-time expenses must have an applicable month");
+            }
+            if (!itemRequest.isOneTime() && itemRequest.applicableMonth() != null) {
+                throw new BadRequestException("Recurring expenses cannot have an applicable month");
+            }
+
             BudgetItem item = new BudgetItem();
             item.budgetId = budgetId;
             item.expenseTypeId = itemRequest.expenseTypeId();
             item.amount = itemRequest.amount();
             item.isOneTime = itemRequest.isOneTime();
+            item.applicableMonth = itemRequest.applicableMonth();
             budgetItemRepository.persist(item);
         }
     }
@@ -197,7 +203,6 @@ public class BudgetService {
             budget.id,
             budget.userEmail,
             budget.year,
-            budget.month,
             itemResponses,
             budget.createdAt,
             budget.updatedAt
@@ -222,6 +227,7 @@ public class BudgetService {
             expenseTypeResponse,
             item.amount,
             item.isOneTime,
+            item.applicableMonth,
             item.createdAt,
             item.updatedAt
         );

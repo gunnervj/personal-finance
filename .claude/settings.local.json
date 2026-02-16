@@ -18,7 +18,21 @@
       "Bash(docker-compose build:*)",
       "Bash(docker-compose stop:*)",
       "Bash(docker-compose rm:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(npm install:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose run:*)",
+      "Bash(npm run dev:*)",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(echo '\n\n---\n\n## 📋 What''''s Next\n\n**Immediate Next Steps \\(Phase 3\\)**:\n\n1. **Backend**: Implement UserPreferences CRUD endpoints\n   - GET/POST/PUT /api/v1/users/preferences\n   - Avatar upload/download endpoints\n   - JSONB validation\n\n2. **Frontend**: Build onboarding flow\n   - PreferencesModal component \\(required on first login\\)\n   - Currency, emergency fund, salary inputs\n   - Avatar upload UI\n   - Prevent skipping with validation\n\n3. **Integration**: Connect preferences to dashboard\n   - Fetch preferences on login\n   - Show modal if preferences empty\n   - Save and redirect to dashboard\n\n**Following Phases**:\n- Phase 4: Budget Backend \\(expense types, budgets, items\\)\n- Phase 5: Budget Frontend \\(creation UI, doughnut chart\\)\n- Phase 6: Transaction Backend \\(CRUD + aggregations\\)\n- Phase 7: Transaction Frontend \\(table, forms, summaries\\)\n- Phase 8: Dashboard Widgets \\(charts, stats, recent activity\\)\n- Phase 9: Polish & Edge Cases \\(animations, toasts, empty states\\)\n\n---\n\n## 🎯 Alignment with Requirements \\(CLAUDE.md\\)\n\n### ✅ Completed\n- [x] Dark mode theme with modern design\n- [x] Electric blue accents with deep navy background\n- [x] Inter + Poppins fonts\n- [x] Collapsible left sidebar\n- [x] Responsive mobile layout\n- [x] Keycloak authentication \\(email as username\\)\n- [x] User registration flow\n- [x] Logo with transparent background\n- [x] Rounded cards with shadows\n- [x] Hover animations on cards\n\n### 🔜 Next \\(Per Requirements\\)\n- [ ] First-time user modal for preferences \\(Phase 3\\)\n- [ ] Budget creation with expense types \\(Phase 4-5\\)\n- [ ] Transaction table with edit/delete \\(Phase 6-7\\)\n- [ ] Dashboard widgets with charts \\(Phase 8\\)\n- [ ] Doughnut chart for expense distribution \\(Phase 8\\)\n- [ ] Bar chart for year-over-year comparison \\(Phase 8\\)\n- [ ] Toast notifications \\(Phase 9\\)\n- [ ] Table pagination \\(load 10 at a time\\) \\(Phase 7\\)\n\n---\n\n_Last Updated: Feb 15, 2026_\n')",
+      "Bash(npm run build:*)",
+      "Bash(lsof:*)",
+      "Bash(docker compose stop:*)",
+      "Bash(docker compose build:*)",
+      "Bash(docker compose up -d user-service budget-service transaction-service)",
+      "Bash(docker compose restart:*)"
     ]
   }
 }

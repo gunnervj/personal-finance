@@ -6,9 +6,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "budget_items", schema = "budget_schema",
-    uniqueConstraints = @UniqueConstraint(name = "uq_budget_items_budget_expense_type",
-        columnNames = {"budget_id", "expense_type_id"}))
+@Table(name = "budget_items", schema = "budget_schema")
 public class BudgetItem {
 
     @Id
@@ -26,6 +24,9 @@ public class BudgetItem {
 
     @Column(name = "is_one_time", nullable = false)
     public Boolean isOneTime = false;
+
+    @Column(name = "applicable_month", nullable = true)
+    public Integer applicableMonth;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     public LocalDateTime createdAt;

@@ -6,11 +6,11 @@ Track progress against the original plan for the Personal Finance Management Sys
 
 ## Overall Status
 
-**Current Phase**: Phase 4 Complete ✅ | Phase 5 Ready to Start ⏳
+**Current Phase**: Phase 5 Complete ✅ | Phase 6 Ready to Start ⏳
 
-**Timeline**: Started Feb 14, 2026 | Phase 4 Completed Feb 16, 2026
+**Timeline**: Started Feb 14, 2026 | Phase 5 Completed Feb 16, 2026
 
-**Completion**: 44% (Phases 1-4 of 9 complete)
+**Completion**: 56% (Phases 1-5 of 9 complete)
 
 ---
 
@@ -315,40 +315,77 @@ Track progress against the original plan for the Personal Finance Management Sys
 
 ---
 
-## 🔜 Phase 5: Budget Frontend
+## ✅ Phase 5: Budget Frontend - COMPLETE
 
-**Status**: 🔜 **Pending**
-**Estimated Duration**: 5-6 hours
-
-### Layout Components
-
-- [ ] Sidebar (collapsible navigation)
-- [ ] TopBar (user avatar, name, logout)
-- [ ] AppShell (layout wrapper)
+**Status**: ✅ **100% Complete**
+**Duration**: ~6 hours
+**Completed**: Feb 16, 2026
 
 ### Budget UI Components
 
-- [ ] Budget year view (12 month cards)
-- [ ] Budget form modal
-- [ ] Expense type manager
-- [ ] Icon picker (30-40 Lucide icons)
-- [ ] Budget donut chart (Chart.js)
-- [ ] Real-time salary allocation calculator
-- [ ] Budget copy UI (next month, all months, next year)
+- [x] Expense Type Manager component with create/edit/delete
+- [x] Expense Type Form with icon picker (20+ Lucide icons)
+- [x] Budget Year View component (card-based layout)
+- [x] Budget Form modal (create yearly budgets)
+  - [x] Recurring monthly expenses section
+  - [x] One-time expenses section with month selector
+  - [x] Real-time budget calculations
+  - [x] Salary percentage tracking
+  - [x] Potential savings display
+- [x] Budget Detail Modal (view budget breakdown by month)
+- [x] Copy Budget Modal (copy between years)
+- [x] Donut chart visualization (Chart.js not needed - custom SVG)
+- [x] Toast notification system (success/error/warning)
+
+### Key Features
+
+- [x] Year-based budget model (not month-based)
+- [x] Recurring vs one-time expense tracking
+- [x] Icon picker with 20+ expense type icons
+- [x] Real-time budget calculations
+- [x] Toast notifications for all operations
+- [x] Conditional Create button (hide after budget exists)
+- [x] Budget copying between years
+- [x] Delete protection for used expense types
+- [x] JWT token expiration handling with auto-redirect
+
+### Bug Fixes & Improvements
+
+- [x] Fixed button text wrapping issues
+- [x] Fixed modal double scrollbar issue
+- [x] Fixed 500 error in budget list API (HQL query bug)
+- [x] Fixed token verification causing login issues
+- [x] Replaced all alerts/inline errors with toasts
+- [x] Added slide-in animations for toasts
+- [x] Improved modal scroll behavior with flex layout
+
+### Security Enhancements
+
+- [x] JWT signature verification configured
+- [x] Token expiration detection and redirect
+- [x] Removed problematic userinfo endpoint verification
+- [x] Documented token lifespan configuration recommendations
 
 ---
 
 ## 🔜 Phase 6: Transaction Backend
 
-**Status**: 🔜 **Pending**
+**Status**: 🔜 **Ready to Start**
 **Estimated Duration**: 3-4 hours
 
 ### Tasks
 
-- [ ] `Transaction` entity
-- [ ] `TransactionResource` CRUD with pagination
-- [ ] Aggregation endpoints (monthly, by-type, yearly)
-- [ ] Date validation (match budget month/year)
+- [ ] `Transaction` entity with all required fields
+- [ ] `TransactionRepository` with custom queries
+- [ ] `TransactionService` with business logic
+- [ ] `TransactionResource` CRUD endpoints with pagination (10 per page)
+- [ ] Aggregation endpoints (monthly summary, by-type, yearly)
+- [ ] Date validation (match budget year)
+- [ ] Link transactions to budget items
+- [ ] Calculate remaining budget per expense type
+- [ ] Prevent budget deletion if transactions exist
+- [ ] Transaction filtering (by date range, expense type)
+- [ ] Sort by date descending
 
 ---
 
@@ -587,5 +624,5 @@ ee57f50 - Fix .dockerignore for multi-stage Docker builds
 
 ---
 
-_Last Updated: Feb 15, 2026_
+_Last Updated: Feb 16, 2026 - Phase 5 Complete_
 

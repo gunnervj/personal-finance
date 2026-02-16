@@ -8,7 +8,6 @@ public record BudgetResponse(
     UUID id,
     String userEmail,
     Integer year,
-    Integer month,
     List<BudgetItemResponse> items,
     LocalDateTime createdAt,
     LocalDateTime updatedAt

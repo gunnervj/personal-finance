@@ -1,10 +1,13 @@
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 export interface ApiError {
   message: string;
   status: number;
   details?: unknown;
 }
+
+// Flag to prevent multiple redirects
+let isRedirecting = false;
 
 class ApiClient {
   private baseUrls = {
@@ -54,6 +57,26 @@ class ApiClient {
     });
 
     if (!response.ok) {
+      // Handle 401 Unauthorized - Token expired
+      if (response.status === 401 && !isRedirecting) {
+        isRedirecting = true;
+        console.warn('Token expired, redirecting to login...');
+
+        // Sign out and redirect to login
+        await signOut({ callbackUrl: '/login' });
+
+        // Reset flag after a delay
+        setTimeout(() => {
+          isRedirecting = false;
+        }, 1000);
+
+        // Throw error to prevent further processing
+        throw {
+          message: 'Your session has expired. Please login again.',
+          status: 401,
+        } as ApiError;
+      }
+
       const error: ApiError = {
         message: response.statusText,
         status: response.status,

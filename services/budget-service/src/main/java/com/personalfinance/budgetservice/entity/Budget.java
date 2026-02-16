@@ -6,8 +6,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "budgets", schema = "budget_schema",
-    uniqueConstraints = @UniqueConstraint(name = "uq_budgets_user_year_month",
-        columnNames = {"user_email", "year", "month"}))
+    uniqueConstraints = @UniqueConstraint(name = "uq_budgets_user_year",
+        columnNames = {"user_email", "year"}))
 public class Budget {
 
     @Id
@@ -19,9 +19,6 @@ public class Budget {
 
     @Column(name = "year", nullable = false)
     public Integer year;
-
-    @Column(name = "month", nullable = false)
-    public Integer month;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     public LocalDateTime createdAt;

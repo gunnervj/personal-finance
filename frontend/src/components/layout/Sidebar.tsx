@@ -42,11 +42,9 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full bg-sidebar-bg border-r border-border/50 transition-all duration-300 z-50 ${
-          collapsed ? "w-20" : "w-64"
-        } ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
+        className={`fixed left-0 top-0 h-full bg-sidebar-bg border-r border-border/50 transition-all duration-300 z-50 ${collapsed ? "w-20" : "w-64"
+          } ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0`}
       >
         {/* Logo Section */}
         <div className="flex items-center justify-between p-5 border-b border-border/30">
@@ -55,8 +53,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               <Image
                 src="/logo.png"
                 alt="Logo"
-                width={36}
-                height={36}
+                width={58}
+                height={58}
                 className="drop-shadow-lg"
               />
               <span className="text-lg font-semibold text-primary">
@@ -107,11 +105,10 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 key={item.href}
                 href={item.href}
                 onClick={onMobileClose}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 relative ${
-                  active
-                    ? "bg-primary/10 text-primary"
-                    : "text-foreground-muted hover:text-foreground hover:bg-card-hover"
-                } ${collapsed ? "justify-center" : ""}`}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 relative ${active
+                  ? "bg-primary/10 text-primary"
+                  : "text-foreground-muted hover:text-foreground hover:bg-card-hover"
+                  } ${collapsed ? "justify-center" : ""}`}
                 title={collapsed ? item.label : undefined}
               >
                 {active && (

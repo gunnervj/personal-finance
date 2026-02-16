@@ -11,19 +11,15 @@ import java.util.Optional;
 public class BudgetRepository implements PanacheRepository<Budget> {
 
     public List<Budget> findByUserEmail(String userEmail) {
-        return list("userEmail order by year desc, month desc", userEmail);
+        return list("userEmail = ?1 order by year desc", userEmail);
     }
 
-    public List<Budget> findByUserEmailAndYear(String userEmail, Integer year) {
-        return list("userEmail = ?1 and year = ?2 order by month", userEmail, year);
-    }
-
-    public Optional<Budget> findByUserEmailAndYearAndMonth(String userEmail, Integer year, Integer month) {
-        return find("userEmail = ?1 and year = ?2 and month = ?3", userEmail, year, month)
+    public Optional<Budget> findByUserEmailAndYear(String userEmail, Integer year) {
+        return find("userEmail = ?1 and year = ?2", userEmail, year)
             .firstResultOptional();
     }
 
-    public boolean existsByUserEmailAndYearAndMonth(String userEmail, Integer year, Integer month) {
-        return count("userEmail = ?1 and year = ?2 and month = ?3", userEmail, year, month) > 0;
+    public boolean existsByUserEmailAndYear(String userEmail, Integer year) {
+        return count("userEmail = ?1 and year = ?2", userEmail, year) > 0;
     }
 }

@@ -10,6 +10,7 @@ public record BudgetItemResponse(
     ExpenseTypeResponse expenseType,
     BigDecimal amount,
     Boolean isOneTime,
+    Integer applicableMonth,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {}

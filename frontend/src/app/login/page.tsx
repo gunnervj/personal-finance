@@ -21,8 +21,8 @@ function LoginContent() {
           <Image
             src="/logo.png"
             alt="Personal Finance Logo"
-            width={70}
-            height={70}
+            width={90}
+            height={90}
             className="drop-shadow-lg"
           />
         </div>

@@ -10,6 +10,13 @@ Another widget to show a nice doughnut chart showing the distribution of expense
 
 On the left menu, we will have option of budget. User can click on a budget and see the active budget(which is of current year). If none, show a nice little message to create a budget. Buttons will be there to create a monthly budget for current year. Budget will be for a month grouped under a year. The same budget is going to be copied for every month.  We will not support creation of budgets for previous years. Also we will not support creation of budgets for future years unless it is december of the current year. Users can copy current budget to next year (this is going to be the default behavior if user does not create a budget for next year).
 
+**Budget Creation and Management Rules:**
+- Once a budget is created for the current year, the "Create Budget" button should be hidden for that year
+- In December, users can see the "Create Budget" button to create next year's budget
+- Users can always edit existing budgets (modify amounts, add/remove expense types)
+- Users can only delete a budget if there are NO transactions recorded against it
+- If a budget has transactions, deletion should be prevented with an appropriate error message
+
 We are not going to have fixed budget expense types. User can create their own budget expense types. User can add, edit and delete budget expense types. Types can be like rent, utilities, groceries, etc. We should be able to calculate and show the user in real time how much they are allocating for each budget expense type in terms of their monthly salary. We should also show how much they are left with after deducting all the budget expense types for potential monthly savings target. We should also give the flexibiltiy to user to mark an expense type as optional or mandatory. Mandatory expense types can be calculated to form an emergency fund requirement. Once a expense type is created, it will be available to the user to be used in other budgets as well. So it is global to the user and does not have to create it every time they create a budget. Some of the expense types can be applicable only for a particular month. This can be used to record one time expenses.
 
 If user already has expense types created, we should show them in the list of expense types to be used in budget. User can select the expense types to be used in budget. User can also create new expense types in the budget creation modal window. Users cannot delete expense types that are already used in a budget. However user can choose to remove an expense type from current budget and also option to edit the amount allocated for the expense type.
@@ -84,6 +91,23 @@ Database - PostgreSQL
 I am not hosting the app anywhere until things are ready. Development will be done locally with docker-compose.
 
 This is for the MVP.
+
+## Security & Authentication Configuration
+
+**JWT Token Validation:**
+- Backend services use standard JWT signature verification (fast, no network calls)
+- Token lifespans should be configured in Keycloak admin console:
+  - Access Token Lifespan: 5-15 minutes (recommended)
+  - SSO Session Idle: 30 minutes
+  - SSO Session Max: 10 hours
+- Tokens are stateless - once issued, valid until expiration
+- Frontend automatically redirects to login on token expiration (401 errors)
+- Do NOT use `verify-access-token-with-user-info=true` - causes compatibility issues with NextAuth
+
+**Toast Notifications:**
+- All error/success messages displayed as toast notifications (bottom-right corner)
+- 3-second auto-dismiss with slide-in animation
+- Used throughout application instead of inline error messages
 
 
 
