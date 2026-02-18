@@ -11,6 +11,7 @@ import {
   ExpenseType,
   BudgetItemRequest,
   CreateBudgetRequest,
+  Budget,
   budgetApi,
   expenseTypeApi,
 } from '@/lib/api/budget';
@@ -22,6 +23,7 @@ interface BudgetFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  budget?: Budget; // Optional: if provided, form is in edit mode
 }
 
 interface BudgetItemForm extends BudgetItemRequest {
@@ -37,11 +39,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  budget,
 }) => {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
+  const isEditMode = !!budget;
 
-  const [year, setYear] = useState(currentYear);
+  const [year, setYear] = useState(budget?.year || currentYear);
   const [items, setItems] = useState<BudgetItemForm[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
   const [monthlySalary, setMonthlySalary] = useState(0);
@@ -54,6 +58,21 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
       loadData();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (budget) {
+      // Pre-populate form with existing budget data
+      const formItems: BudgetItemForm[] = budget.items.map((item, index) => ({
+        tempId: `existing-${index}`,
+        expenseTypeId: item.expenseType.id,
+        amount: item.amount,
+        isOneTime: item.isOneTime,
+        applicableMonth: item.applicableMonth,
+      }));
+      setItems(formItems);
+      setYear(budget.year);
+    }
+  }, [budget]);
 
   const loadData = async () => {
     try {
@@ -160,12 +179,15 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
       }
     }
 
-    const currentMonth = currentDate.getMonth() + 1;
-    if (year < currentYear) {
-      return 'Cannot create budgets for past years';
-    }
-    if (year > currentYear && currentMonth !== 12) {
-      return 'Can only create next year budgets in December';
+    // Skip year validation in edit mode
+    if (!isEditMode) {
+      const currentMonth = currentDate.getMonth() + 1;
+      if (year < currentYear) {
+        return 'Cannot create budgets for past years';
+      }
+      if (year > currentYear && currentMonth !== 12) {
+        return 'Can only create next year budgets in December';
+      }
     }
 
     return null;
@@ -183,19 +205,31 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
     setLoading(true);
 
     try {
-      const request: CreateBudgetRequest = {
-        budget: { year },
-        items: items.map(({ tempId, ...item }) => item),
-      };
+      const budgetItems: BudgetItemRequest[] = items.map(({ tempId, ...item }) => item);
 
-      await budgetApi.create(request);
-      showSuccess(`Budget for ${year} created successfully!`);
+      if (isEditMode) {
+        // Update existing budget
+        await budgetApi.update(year, budgetItems);
+        showSuccess(`Budget for ${year} updated successfully!`);
+      } else {
+        // Create new budget
+        const request: CreateBudgetRequest = {
+          budget: { year },
+          items: budgetItems,
+        };
+        await budgetApi.create(request);
+        showSuccess(`Budget for ${year} created successfully!`);
+      }
+
       onSuccess();
       onClose();
-      setItems([]);
-      setYear(currentYear);
+      if (!isEditMode) {
+        setItems([]);
+        setYear(currentYear);
+      }
     } catch (err: unknown) {
-      showError(err instanceof Error ? err.message : 'Failed to create budget');
+      const action = isEditMode ? 'update' : 'create';
+      showError(err instanceof Error ? err.message : `Failed to ${action} budget`);
     } finally {
       setLoading(false);
     }
@@ -208,18 +242,20 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Yearly Budget">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? `Edit Budget ${year}` : "Create Yearly Budget"}>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Select
-          label="Year"
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-        >
-          <option value={currentYear}>{currentYear}</option>
-          {currentDate.getMonth() === 11 && (
-            <option value={currentYear + 1}>{currentYear + 1}</option>
-          )}
-        </Select>
+        {!isEditMode && (
+          <Select
+            label="Year"
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+          >
+            <option value={currentYear}>{currentYear}</option>
+            {currentDate.getMonth() === 11 && (
+              <option value={currentYear + 1}>{currentYear + 1}</option>
+            )}
+          </Select>
+        )}
 
         {/* Budget Summary */}
         <div className="p-4 bg-gray-800 border border-gray-700 rounded-lg space-y-3">
@@ -425,7 +461,10 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
             Cancel
           </Button>
           <Button type="submit" disabled={loading} className="whitespace-nowrap">
-            {loading ? 'Creating...' : 'Create Budget'}
+            {loading
+              ? (isEditMode ? 'Updating...' : 'Creating...')
+              : (isEditMode ? 'Update Budget' : 'Create Budget')
+            }
           </Button>
         </div>
       </form>

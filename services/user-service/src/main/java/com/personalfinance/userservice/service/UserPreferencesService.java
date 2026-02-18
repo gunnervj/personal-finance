@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.util.HashMap;
+import java.util.Map;
 
 @ApplicationScoped
 public class UserPreferencesService {
@@ -54,9 +55,15 @@ public class UserPreferencesService {
     }
 
     private void updatePreferences(UserPreferences prefs, PreferencesRequest request) {
-        prefs.preferences.put("currency", request.currency());
-        prefs.preferences.put("emergencyFundMonths", request.emergencyFundMonths());
-        prefs.preferences.put("monthlySalary", request.monthlySalary());
+        // Create a new HashMap to ensure Hibernate detects the change for JSONB column
+        Map<String, Object> newPrefs = new HashMap<>(prefs.preferences);
+        newPrefs.put("currency", request.currency());
+        newPrefs.put("emergencyFundMonths", request.emergencyFundMonths());
+        newPrefs.put("monthlySalary", request.monthlySalary());
+        // Always update emergencyFundSaved, using 0.0 as default if null
+        newPrefs.put("emergencyFundSaved", request.emergencyFundSaved() != null ? request.emergencyFundSaved() : 0.0);
+        // Reassign to trigger Hibernate's dirty checking
+        prefs.preferences = newPrefs;
     }
 
     private PreferencesResponse toResponse(UserPreferences prefs, boolean isFirstTime) {
@@ -66,6 +73,7 @@ public class UserPreferencesService {
             (String) prefs.preferences.getOrDefault("currency", "USD"),
             (Integer) prefs.preferences.getOrDefault("emergencyFundMonths", 3),
             ((Number) prefs.preferences.getOrDefault("monthlySalary", 0.0)).doubleValue(),
+            ((Number) prefs.preferences.getOrDefault("emergencyFundSaved", 0.0)).doubleValue(),
             prefs.avatarPath,
             prefs.createdAt,
             prefs.updatedAt,

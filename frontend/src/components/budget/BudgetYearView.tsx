@@ -26,6 +26,7 @@ export const BudgetYearView: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   const { showError, showSuccess } = useToast();
@@ -126,6 +127,7 @@ export const BudgetYearView: React.FC = () => {
             const recurringItems = budget.items.filter(item => !item.isOneTime);
             const oneTimeItems = budget.items.filter(item => item.isOneTime);
             const recurringTotal = recurringItems.reduce((sum, item) => sum + item.amount, 0);
+            const isPastYear = budget.year < currentYear;
 
             // Get months that have one-time expenses
             const monthsWithOneTime = [...new Set(
@@ -138,6 +140,8 @@ export const BudgetYearView: React.FC = () => {
                 className={`${
                   budget.year === currentYear
                     ? 'border-blue-500 bg-blue-500/5'
+                    : isPastYear
+                    ? 'border-gray-700 opacity-75'
                     : 'border-gray-700'
                 }`}
               >
@@ -148,6 +152,11 @@ export const BudgetYearView: React.FC = () => {
                       {budget.year === currentYear && (
                         <span className="px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded whitespace-nowrap">
                           Current Year
+                        </span>
+                      )}
+                      {isPastYear && (
+                        <span className="px-2 py-1 bg-gray-700 text-gray-400 text-xs font-semibold rounded whitespace-nowrap">
+                          Past Year (Read-only)
                         </span>
                       )}
                     </div>
@@ -209,10 +218,9 @@ export const BudgetYearView: React.FC = () => {
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => {
-                          // TODO: Implement edit functionality
-                          alert('Edit functionality will be implemented in the next phase');
-                        }}
+                        onClick={() => setEditingBudget(budget)}
+                        disabled={isPastYear}
+                        title={isPastYear ? 'Cannot edit past year budgets' : ''}
                       >
                         <Edit2 className="w-4 h-4 mr-1" />
                         Edit
@@ -224,6 +232,7 @@ export const BudgetYearView: React.FC = () => {
                             size="sm"
                             variant="danger"
                             onClick={() => handleDelete(budget.year)}
+                            disabled={isPastYear}
                           >
                             Confirm
                           </Button>
@@ -239,6 +248,8 @@ export const BudgetYearView: React.FC = () => {
                         <Button
                           size="sm"
                           variant="danger"
+                          disabled={isPastYear}
+                          title={isPastYear ? 'Cannot delete past year budgets' : ''}
                           onClick={() => setDeleteConfirm(budget.year)}
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
@@ -261,6 +272,16 @@ export const BudgetYearView: React.FC = () => {
         onSuccess={loadBudgets}
       />
 
+      <BudgetForm
+        isOpen={!!editingBudget}
+        onClose={() => setEditingBudget(null)}
+        onSuccess={() => {
+          loadBudgets();
+          setEditingBudget(null);
+        }}
+        budget={editingBudget || undefined}
+      />
+
       <CopyBudgetModal
         isOpen={showCopyModal}
         onClose={() => setShowCopyModal(false)}
@@ -274,6 +295,10 @@ export const BudgetYearView: React.FC = () => {
           onClose={() => setSelectedBudget(null)}
           budget={selectedBudget}
           onUpdate={loadBudgets}
+          onEdit={() => {
+            setEditingBudget(selectedBudget);
+            setSelectedBudget(null);
+          }}
         />
       )}
     </div>

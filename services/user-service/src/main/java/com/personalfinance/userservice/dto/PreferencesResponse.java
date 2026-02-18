@@ -9,6 +9,7 @@ public record PreferencesResponse(
     String currency,
     Integer emergencyFundMonths,
     Double monthlySalary,
+    Double emergencyFundSaved,
     String avatarUrl,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,

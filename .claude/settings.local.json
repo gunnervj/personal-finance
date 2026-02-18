@@ -32,7 +32,14 @@
       "Bash(docker compose stop:*)",
       "Bash(docker compose build:*)",
       "Bash(docker compose up -d user-service budget-service transaction-service)",
-      "Bash(docker compose restart:*)"
+      "Bash(docker compose restart:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npx next lint:*)",
+      "Bash(npx tsc:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(./mvnw compile:*)",
+      "Bash(pkill:*)",
+      "Bash(chmod:*)"
     ]
   }
 }

@@ -5,7 +5,8 @@ import {
   Home, Car, ShoppingCart, Utensils, Zap, Heart, Briefcase, GraduationCap,
   Phone, Tv, Coffee, Shirt, Plane, Gift, Wrench, DollarSign, Music,
   Dumbbell, PiggyBank, CreditCard, Fuel, UtensilsCrossed, Film, GamepadIcon,
-  Palette, Stethoscope, Baby, Dog, Flower, Sparkles
+  Palette, Stethoscope, Baby, Dog, Flower, Sparkles, Smartphone, Hammer, Cake,
+  CircleQuestionMark, Beef
 } from 'lucide-react';
 
 const ICONS = [
@@ -39,6 +40,11 @@ const ICONS = [
   { name: 'dog', Icon: Dog, label: 'Pets' },
   { name: 'flower', Icon: Flower, label: 'Garden' },
   { name: 'sparkles', Icon: Sparkles, label: 'Other' },
+  { name: 'smartphone', Icon: Smartphone, label: 'Mobile' },
+  { name: 'hammer', Icon: Hammer, label: 'Maintenance' },
+  { name: 'cake', Icon: Cake, label: 'Birthday' },
+  { name: 'circle-question-mark', Icon: CircleQuestionMark, label: 'Misc' },
+  { name: 'beef', Icon: Beef, label: 'Meat' },
 ];
 
 interface IconPickerProps {
@@ -86,11 +92,10 @@ export const IconPicker: React.FC<IconPickerProps> = ({ selectedIcon, onSelect }
                     onSelect(name);
                     setIsOpen(false);
                   }}
-                  className={`p-3 rounded-lg flex flex-col items-center gap-1 transition-all ${
-                    selectedIcon === name
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
+                  className={`p-3 rounded-lg flex flex-col items-center gap-1 transition-all ${selectedIcon === name
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
                   title={label}
                 >
                   <Icon className="w-5 h-5" />

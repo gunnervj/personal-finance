@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Input, Select, Button, Avatar } from './ui';
 import { Upload, LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
@@ -10,32 +10,57 @@ interface PreferencesFormData {
   currency: string;
   emergencyFundMonths: number;
   monthlySalary: number;
+  emergencyFundSaved: number;
 }
 
 interface PreferencesModalProps {
   isOpen: boolean;
   onSave: (data: PreferencesFormData, avatarFile?: File) => Promise<void>;
+  onClose?: () => void;
   userEmail: string;
+  initialValues?: Partial<PreferencesFormData>;
+  currentAvatarUrl?: string | null;
 }
 
 export const PreferencesModal: React.FC<PreferencesModalProps> = ({
   isOpen,
   onSave,
-  userEmail
+  onClose,
+  userEmail,
+  initialValues,
+  currentAvatarUrl,
 }) => {
   const userName = userEmail.split('@')[0];
+  const isFirstTime = !initialValues;
   const [formData, setFormData] = useState<PreferencesFormData>({
-    currency: 'USD',
-    emergencyFundMonths: 3,
-    monthlySalary: 0,
+    currency: initialValues?.currency || 'USD',
+    emergencyFundMonths: initialValues?.emergencyFundMonths || 3,
+    monthlySalary: initialValues?.monthlySalary || 0,
+    emergencyFundSaved: initialValues?.emergencyFundSaved || 0,
   });
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(currentAvatarUrl || null);
   const [errors, setErrors] = useState<Partial<PreferencesFormData>>({});
   const [loading, setLoading] = useState(false);
 
   const { showError } = useToast();
+
+  const modalTitle = isFirstTime ? "Welcome! Let's set up your account" : "Edit Preferences";
+  const canClose = !isFirstTime;
+
+  // Update form data when initialValues changes
+  useEffect(() => {
+    if (initialValues && isOpen) {
+      setFormData({
+        currency: initialValues.currency || 'USD',
+        emergencyFundMonths: initialValues.emergencyFundMonths || 3,
+        monthlySalary: initialValues.monthlySalary || 0,
+        emergencyFundSaved: initialValues.emergencyFundSaved || 0,
+      });
+      setAvatarPreview(currentAvatarUrl || null);
+    }
+  }, [initialValues, currentAvatarUrl, isOpen]);
 
   const emergencyFundOptions = [
     { value: '1', label: '1 month' },
@@ -102,16 +127,18 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => {}} title="Welcome! Let's set up your account" canClose={false}>
-      <div className="mb-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-        <h3 className="text-lg font-semibold text-blue-300 mb-2">
-          👋 Welcome, {userName}!
-        </h3>
-        <p className="text-sm text-gray-300">
-          Let's get your account set up with a few quick preferences. This will help us
-          personalize your financial management experience.
-        </p>
-      </div>
+    <Modal isOpen={isOpen} onClose={onClose || (() => {})} title={modalTitle} canClose={canClose}>
+      {isFirstTime && (
+        <div className="mb-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+          <h3 className="text-lg font-semibold text-blue-300 mb-2">
+            👋 Welcome, {userName}!
+          </h3>
+          <p className="text-sm text-gray-300">
+            Let's get your account set up with a few quick preferences. This will help us
+            personalize your financial management experience.
+          </p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex flex-col items-center space-y-4">
           <Avatar src={avatarPreview} name={userEmail} size="lg" />
@@ -158,6 +185,18 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
           required
         />
 
+        <Input
+          label="Current Emergency Fund Savings"
+          type="number"
+          step="0.01"
+          min="0"
+          value={formData.emergencyFundSaved}
+          onChange={(e) =>
+            setFormData({ ...formData, emergencyFundSaved: parseFloat(e.target.value) || 0 })
+          }
+          placeholder="Amount already saved (optional)"
+        />
+
         <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
           <p className="text-sm text-blue-300">
             💡 You can update these preferences anytime from your profile settings.
@@ -165,7 +204,7 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
         </div>
 
         <Button type="submit" variant="primary" className="w-full" disabled={loading}>
-          {loading ? 'Saving...' : 'Get Started'}
+          {loading ? 'Saving...' : (isFirstTime ? 'Get Started' : 'Save Changes')}
         </Button>
 
         <button

@@ -16,5 +16,7 @@ public record PreferencesRequest(
 
     @NotNull(message = "Monthly salary is required")
     @Positive(message = "Monthly salary must be positive")
-    Double monthlySalary
+    Double monthlySalary,
+
+    Double emergencyFundSaved
 ) {}

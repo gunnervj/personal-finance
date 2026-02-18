@@ -1,5 +1,6 @@
 package com.personalfinance.budgetservice.service;
 
+import com.personalfinance.budgetservice.client.TransactionServiceClient;
 import com.personalfinance.budgetservice.dto.*;
 import com.personalfinance.budgetservice.entity.Budget;
 import com.personalfinance.budgetservice.entity.BudgetItem;
@@ -12,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,6 +32,10 @@ public class BudgetService {
 
     @Inject
     ExpenseTypeRepository expenseTypeRepository;
+
+    @Inject
+    @RestClient
+    TransactionServiceClient transactionServiceClient;
 
     public List<BudgetResponse> getBudgets(String userEmail) {
         return repository.findByUserEmail(userEmail).stream()
@@ -83,11 +89,14 @@ public class BudgetService {
         Budget budget = repository.findByUserEmailAndYear(userEmail, year)
             .orElseThrow(() -> new NotFoundException("Budget not found for year " + year));
 
-        // TODO: Check if budget has transactions before allowing deletion
-        // Once transaction-service is implemented, add a check here:
-        // if (hasTransactions(budget.id)) {
-        //     throw new BadRequestException("Cannot delete budget with existing transactions");
-        // }
+        // Check if any budget items have transactions
+        List<BudgetItem> budgetItems = budgetItemRepository.findByBudgetId(budget.id);
+        for (BudgetItem item : budgetItems) {
+            Boolean hasTransactions = transactionServiceClient.hasBudgetItemTransactions(item.id);
+            if (hasTransactions != null && hasTransactions) {
+                throw new BadRequestException("Cannot delete budget for year " + year + " because it has existing transactions. Please delete all transactions first.");
+            }
+        }
 
         // Budget items will be cascade deleted due to FK constraint
         repository.delete(budget);

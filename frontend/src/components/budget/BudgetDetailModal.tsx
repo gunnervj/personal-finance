@@ -3,7 +3,7 @@
 import React from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { Calendar, Repeat, Sparkles } from 'lucide-react';
+import { Calendar, Repeat, Sparkles, Edit2 } from 'lucide-react';
 import { Budget } from '@/lib/api/budget';
 import { getIconComponent } from './IconPicker';
 
@@ -12,6 +12,7 @@ interface BudgetDetailModalProps {
   onClose: () => void;
   budget: Budget;
   onUpdate: () => void;
+  onEdit?: () => void;
 }
 
 const MONTHS = [
@@ -23,12 +24,22 @@ export const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({
   isOpen,
   onClose,
   budget,
+  onEdit,
 }) => {
+  const currentYear = new Date().getFullYear();
+  const isPastYear = budget.year < currentYear;
+
   const recurringItems = budget.items.filter(item => !item.isOneTime);
   const oneTimeItems = budget.items.filter(item => item.isOneTime);
 
   const recurringTotal = recurringItems.reduce((sum, item) => sum + item.amount, 0);
   const oneTimeTotal = oneTimeItems.reduce((sum, item) => sum + item.amount, 0);
+  const grandTotal = recurringTotal + oneTimeTotal;
+
+  const calculatePercentage = (amount: number): number => {
+    if (grandTotal === 0) return 0;
+    return (amount / grandTotal) * 100;
+  };
 
   // Group one-time items by month
   const oneTimeByMonth = oneTimeItems.reduce((acc, item) => {
@@ -77,22 +88,37 @@ export const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({
             <div className="space-y-2">
               {recurringItems.map((item) => {
                 const IconComponent = getIconComponent(item.expenseType.icon);
+                const percentage = calculatePercentage(item.amount);
                 return (
                   <div
                     key={item.id}
-                    className="p-4 bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-between"
+                    className="p-4 bg-gray-800 border border-gray-700 rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                        <IconComponent className="w-5 h-5 text-blue-400" />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <IconComponent className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <div className="text-white font-medium">{item.expenseType.name}</div>
+                          <div className="text-sm text-gray-400">Every month</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-white font-medium">{item.expenseType.name}</div>
-                        <div className="text-sm text-gray-400">Every month</div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-white whitespace-nowrap">
+                          ${item.amount.toFixed(2)}
+                        </div>
+                        <div className="text-sm text-blue-400 whitespace-nowrap">
+                          {percentage.toFixed(1)}% of total
+                        </div>
                       </div>
                     </div>
-                    <div className="text-xl font-bold text-white whitespace-nowrap">
-                      ${item.amount.toFixed(2)}
+                    {/* Progress bar */}
+                    <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all"
+                        style={{ width: `${percentage}%` }}
+                      />
                     </div>
                   </div>
                 );
@@ -128,21 +154,36 @@ export const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({
                     </div>
                     {items.map((item) => {
                       const IconComponent = getIconComponent(item.expenseType.icon);
+                      const percentage = calculatePercentage(item.amount);
                       return (
                         <div
                           key={item.id}
-                          className="p-4 bg-gray-800 border border-purple-500/30 rounded-lg flex items-center justify-between"
+                          className="p-4 bg-gray-800 border border-purple-500/30 rounded-lg"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                              <IconComponent className="w-5 h-5 text-purple-400" />
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                                <IconComponent className="w-5 h-5 text-purple-400" />
+                              </div>
+                              <div className="text-white font-medium">
+                                {item.expenseType.name}
+                              </div>
                             </div>
-                            <div className="text-white font-medium">
-                              {item.expenseType.name}
+                            <div className="text-right">
+                              <div className="text-xl font-bold text-white whitespace-nowrap">
+                                ${item.amount.toFixed(2)}
+                              </div>
+                              <div className="text-sm text-purple-400 whitespace-nowrap">
+                                {percentage.toFixed(1)}% of total
+                              </div>
                             </div>
                           </div>
-                          <div className="text-xl font-bold text-white whitespace-nowrap">
-                            ${item.amount.toFixed(2)}
+                          {/* Progress bar */}
+                          <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+                            <div
+                              className="bg-purple-500 h-2 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
                           </div>
                         </div>
                       );
@@ -158,6 +199,17 @@ export const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({
           <Button variant="secondary" onClick={onClose} className="whitespace-nowrap">
             Close
           </Button>
+          {onEdit && (
+            <Button
+              onClick={onEdit}
+              disabled={isPastYear}
+              title={isPastYear ? 'Cannot edit past year budgets' : ''}
+              className="whitespace-nowrap"
+            >
+              <Edit2 className="w-4 h-4 mr-2" />
+              Edit Budget
+            </Button>
+          )}
         </div>
       </div>
     </Modal>

@@ -6,6 +6,7 @@ export interface UserPreferences {
   currency: string;
   emergencyFundMonths: number;
   monthlySalary: number;
+  emergencyFundSaved: number;
   avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -16,6 +17,7 @@ export interface PreferencesRequest {
   currency: string;
   emergencyFundMonths: number;
   monthlySalary: number;
+  emergencyFundSaved?: number;
 }
 
 export const preferencesApi = {
@@ -41,5 +43,23 @@ export const preferencesApi = {
     }
 
     return res.json();
+  },
+
+  async getAvatarUrl(): Promise<string | null> {
+    try {
+      const response = await fetch('/api/avatar', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch avatar:', error);
+      return null;
+    }
   },
 };
