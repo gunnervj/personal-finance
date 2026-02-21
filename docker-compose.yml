@@ -134,7 +134,7 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production-min-32-chars}
       KEYCLOAK_ID: frontend
       KEYCLOAK_SECRET: ""
-      KEYCLOAK_ISSUER: ${KEYCLOAK_URL:-http://localhost:8080}/realms/personal-finance
+      KEYCLOAK_ISSUER: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}/realms/personal-finance
       # SSL/TLS Configuration (for self-signed certificates)
       NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-}
       # Public Environment Variables
