@@ -7,9 +7,9 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./infrastructure/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-      POSTGRES_DB: personalfinance
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ${POSTGRES_DB:-personalfinance}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d personalfinance"]
       interval: 5s
@@ -20,18 +20,18 @@ services:
     image: quay.io/keycloak/keycloak:24.0
     command: start-dev
     ports:
-      - "8080:8080"
+      - "${KEYCLOAK_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/personalfinance
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-personalfinance}
       KC_DB_SCHEMA: public
-      KC_DB_USERNAME: admin
-      KC_DB_PASSWORD: admin
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB_USERNAME: ${POSTGRES_USER:-admin}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
@@ -49,6 +49,11 @@ services:
         condition: service_started
     volumes:
       - ./infrastructure/keycloak/setup-keycloak.sh:/setup-keycloak.sh
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      FRONTEND_PORT: ${FRONTEND_PORT:-3000}
+      KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
     entrypoint: ["sh", "/setup-keycloak.sh"]
 
   user-service:
@@ -56,7 +61,7 @@ services:
       context: ./services/user-service
       dockerfile: Dockerfile
     ports:
-      - "8081:8081"
+      - "${USER_SERVICE_PORT:-8081}:8081"
     volumes:
       - ./data/avatars:/app/avatars
     depends_on:
@@ -66,6 +71,8 @@ services:
         condition: service_started
     environment:
       QUARKUS_HTTP_PORT: "8081"
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       QUARKUS_OIDC_CLIENT_ID: "user-service"
       QUARKUS_OIDC_CREDENTIALS_SECRET: "user-service-secret"
 
@@ -74,7 +81,7 @@ services:
       context: ./services/budget-service
       dockerfile: Dockerfile
     ports:
-      - "8082:8082"
+      - "${BUDGET_SERVICE_PORT:-8082}:8082"
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,6 +89,8 @@ services:
         condition: service_started
     environment:
       QUARKUS_HTTP_PORT: "8082"
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       QUARKUS_OIDC_CLIENT_ID: "budget-service"
       QUARKUS_OIDC_CREDENTIALS_SECRET: "budget-service-secret"
 
@@ -90,7 +99,7 @@ services:
       context: ./services/transaction-service
       dockerfile: Dockerfile
     ports:
-      - "8083:8083"
+      - "${TRANSACTION_SERVICE_PORT:-8083}:8083"
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,6 +107,8 @@ services:
         condition: service_started
     environment:
       QUARKUS_HTTP_PORT: "8083"
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       QUARKUS_OIDC_CLIENT_ID: "transaction-service"
       QUARKUS_OIDC_CREDENTIALS_SECRET: "transaction-service-secret"
 
@@ -106,7 +117,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       - keycloak
       - user-service
@@ -116,18 +127,18 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       # NextAuth Configuration
-      NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: dev-secret-change-in-production-min-32-chars
+      NEXTAUTH_URL: http://${APP_DOMAIN:-localhost}:${FRONTEND_PORT:-3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production-min-32-chars}
       KEYCLOAK_ID: frontend
       KEYCLOAK_SECRET: ""
-      KEYCLOAK_ISSUER: http://host.docker.internal:8080/realms/personal-finance
+      KEYCLOAK_ISSUER: http://${APP_DOMAIN:-localhost}:${KEYCLOAK_PORT:-8080}/realms/personal-finance
       # Public Environment Variables
-      NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
+      NEXT_PUBLIC_KEYCLOAK_URL: http://${APP_DOMAIN:-localhost}:${KEYCLOAK_PORT:-8080}
       NEXT_PUBLIC_KEYCLOAK_REALM: personal-finance
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: frontend
-      NEXT_PUBLIC_USER_SERVICE_URL: http://localhost:8081
-      NEXT_PUBLIC_BUDGET_SERVICE_URL: http://localhost:8082
-      NEXT_PUBLIC_TRANSACTION_SERVICE_URL: http://localhost:8083
+      NEXT_PUBLIC_USER_SERVICE_URL: http://${APP_DOMAIN:-localhost}:${USER_SERVICE_PORT:-8081}
+      NEXT_PUBLIC_BUDGET_SERVICE_URL: http://${APP_DOMAIN:-localhost}:${BUDGET_SERVICE_PORT:-8082}
+      NEXT_PUBLIC_TRANSACTION_SERVICE_URL: http://${APP_DOMAIN:-localhost}:${TRANSACTION_SERVICE_PORT:-8083}
 
 volumes:
   pgdata:

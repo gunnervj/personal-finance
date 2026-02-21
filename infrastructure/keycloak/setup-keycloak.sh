@@ -12,10 +12,14 @@
 set -e
 
 KEYCLOAK_URL="http://keycloak:8080"
-ADMIN_USER="admin"
-ADMIN_PASSWORD="admin"
+ADMIN_USER="${KEYCLOAK_ADMIN_USER:-admin}"
+ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-admin}"
 REALM_NAME="personal-finance"
 FRONTEND_CLIENT_ID="frontend"
+
+# Domain configuration from environment (defaults to localhost)
+APP_DOMAIN="${APP_DOMAIN:-localhost}"
+FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 
 # Backend service clients (one per microservice)
 USER_SERVICE_CLIENT="user-service"
@@ -123,10 +127,10 @@ if echo "$FRONTEND_CLIENT_RESPONSE" | grep -q "\"clientId\":\"${FRONTEND_CLIENT_
       \"publicClient\": true,
       \"directAccessGrantsEnabled\": true,
       \"standardFlowEnabled\": true,
-      \"redirectUris\": [\"http://localhost:3000/*\"],
-      \"webOrigins\": [\"http://localhost:3000\"],
+      \"redirectUris\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"],
+      \"webOrigins\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}\"],
       \"attributes\": {
-        \"post.logout.redirect.uris\": \"http://localhost:3000/*\"
+        \"post.logout.redirect.uris\": \"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"
       }
     }"
 else
@@ -140,10 +144,10 @@ else
       \"publicClient\": true,
       \"directAccessGrantsEnabled\": true,
       \"standardFlowEnabled\": true,
-      \"redirectUris\": [\"http://localhost:3000/*\"],
-      \"webOrigins\": [\"http://localhost:3000\"],
+      \"redirectUris\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"],
+      \"webOrigins\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}\"],
       \"attributes\": {
-        \"post.logout.redirect.uris\": \"http://localhost:3000/*\"
+        \"post.logout.redirect.uris\": \"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"
       }
     }"
   # Get the newly created client UUID

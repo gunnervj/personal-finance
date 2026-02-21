@@ -10,6 +10,45 @@ Before deploying, ensure you have the following installed:
 - **Java 21** (for local development only)
 - **Node.js 18+** (for local development only)
 
+## Configuration
+
+### Environment Variables
+
+The application uses a `.env` file for configuration. A `.env.example` template is provided.
+
+1. **Create your .env file** (first time only)
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit .env** for your environment
+   ```bash
+   # For localhost deployment (default)
+   APP_DOMAIN=localhost
+
+   # For remote server deployment (example)
+   APP_DOMAIN=your-server-hostname
+   # or
+   APP_DOMAIN=192.168.1.100
+   ```
+
+**Important Configuration Options:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `APP_DOMAIN` | `localhost` | Hostname/IP where the app is accessible |
+| `FRONTEND_PORT` | `3000` | Port for the frontend application |
+| `KEYCLOAK_PORT` | `8080` | Port for Keycloak authentication |
+| `POSTGRES_USER` | `admin` | Database username |
+| `POSTGRES_PASSWORD` | `admin` | Database password (change in production!) |
+| `NEXTAUTH_SECRET` | (example) | Secret for NextAuth (MUST change in production) |
+
+**After changing .env**, restart the services:
+```bash
+docker-compose down
+./deploy.sh
+```
+
 ## Quick Start (First Time Deployment)
 
 1. **Clone the repository** (if not already done)
@@ -17,7 +56,14 @@ Before deploying, ensure you have the following installed:
    cd /path/to/personal-finance
    ```
 
-2. **Run the deployment script**
+2. **Configure environment** (first time only)
+   ```bash
+   cp .env.example .env
+   # Edit .env if deploying to a remote server
+   nano .env  # or use your preferred editor
+   ```
+
+3. **Run the deployment script**
    ```bash
    ./deploy.sh
    ```
