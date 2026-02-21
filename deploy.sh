@@ -119,11 +119,13 @@ start_services() {
     sleep 5
 
     print_info "Waiting for Keycloak to be ready (this may take 30-60 seconds)..."
-    timeout=120
+    timeout=180
     elapsed=0
-    while ! curl -sf http://localhost:8080/health/ready > /dev/null 2>&1; do
+    # Check if Keycloak is responding on port 8080 by checking the realms endpoint
+    while ! curl -sf http://localhost:8080/realms/master > /dev/null 2>&1; do
         if [ $elapsed -ge $timeout ]; then
             print_error "Keycloak failed to start within ${timeout} seconds"
+            print_info "Checking Keycloak logs..."
             docker-compose logs keycloak | tail -50
             exit 1
         fi
