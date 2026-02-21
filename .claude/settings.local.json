@@ -39,7 +39,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(./mvnw compile:*)",
       "Bash(pkill:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(git push:*)"
     ]
   }
 }

@@ -121,7 +121,7 @@ start_services() {
     print_info "Waiting for Keycloak to be ready (this may take 30-60 seconds)..."
     timeout=120
     elapsed=0
-    while ! docker-compose exec -T keycloak curl -sf http://localhost:8080/health/ready > /dev/null 2>&1; do
+    while ! curl -sf http://localhost:8080/health/ready > /dev/null 2>&1; do
         if [ $elapsed -ge $timeout ]; then
             print_error "Keycloak failed to start within ${timeout} seconds"
             docker-compose logs keycloak | tail -50
