@@ -14,38 +14,68 @@ Before deploying, ensure you have the following installed:
 
 ### Environment Variables
 
-The application uses a `.env` file for configuration. A `.env.example` template is provided.
+The application uses a `.env` file for configuration. Multiple example templates are provided for different deployment scenarios.
 
-1. **Create your .env file** (first time only)
-   ```bash
-   cp .env.example .env
-   ```
+#### Deployment Modes
 
-2. **Edit .env** for your environment
-   ```bash
-   # For localhost deployment (default)
-   APP_DOMAIN=localhost
+**1. Localhost Development (Default)**
+```bash
+cp .env.example .env
+```
 
-   # For remote server deployment (example)
-   APP_DOMAIN=your-server-hostname
-   # or
-   APP_DOMAIN=192.168.1.100
-   ```
+**2. Server with Port-based URLs**
+```bash
+# Edit .env and set:
+FRONTEND_URL=http://your-server-ip:3000
+KEYCLOAK_URL=http://your-server-ip:8080
+USER_SERVICE_URL=http://your-server-ip:8081
+BUDGET_SERVICE_URL=http://your-server-ip:8082
+TRANSACTION_SERVICE_URL=http://your-server-ip:8083
+```
 
-**Important Configuration Options:**
+**3. Wildcard Subdomain Deployment (Production)**
+```bash
+cp .env.wildcard-example .env
+# Edit and configure your domain:
+FRONTEND_URL=http://app.yourdomain.com
+KEYCLOAK_URL=http://keycloak.yourdomain.com
+USER_SERVICE_URL=http://api.yourdomain.com/user
+```
 
-| Variable | Default | Description |
+### Configuration Reference
+
+| Variable | Example | Description |
 |----------|---------|-------------|
-| `APP_DOMAIN` | `localhost` | Hostname/IP where the app is accessible |
-| `FRONTEND_PORT` | `3000` | Port for the frontend application |
-| `KEYCLOAK_PORT` | `8080` | Port for Keycloak authentication |
+| `FRONTEND_URL` | `http://localhost:3000` or `http://app.example.com` | Full URL where frontend is accessible |
+| `KEYCLOAK_URL` | `http://localhost:8080` or `http://keycloak.example.com` | Full URL for Keycloak authentication |
+| `USER_SERVICE_URL` | `http://localhost:8081` or `http://api.example.com/user` | Full URL for User Service API |
+| `BUDGET_SERVICE_URL` | `http://localhost:8082` or `http://api.example.com/budget` | Full URL for Budget Service API |
+| `TRANSACTION_SERVICE_URL` | `http://localhost:8083` or `http://api.example.com/transaction` | Full URL for Transaction Service API |
 | `POSTGRES_USER` | `admin` | Database username |
-| `POSTGRES_PASSWORD` | `admin` | Database password (change in production!) |
-| `NEXTAUTH_SECRET` | (example) | Secret for NextAuth (MUST change in production) |
+| `POSTGRES_PASSWORD` | `admin` | Database password (**change in production!**) |
+| `KEYCLOAK_ADMIN_PASSWORD` | `admin` | Keycloak admin password (**change in production!**) |
+| `NEXTAUTH_SECRET` | (example) | Secret for NextAuth (**MUST change in production**, min 32 chars) |
+
+### Wildcard Domain Setup
+
+For production deployments with clean URLs using subdomains (e.g., `app.example.com`, `keycloak.example.com`):
+
+1. **Configure DNS Wildcard Record:**
+   ```
+   *.yourdomain.com A 192.168.1.100
+   ```
+
+2. **Use the wildcard example:**
+   ```bash
+   cp .env.wildcard-example .env
+   nano .env  # Edit with your domain
+   ```
+
+3. **Set up reverse proxy** (nginx/traefik) to route subdomains to containers
 
 **After changing .env**, restart the services:
 ```bash
-docker-compose down
+docker-compose down -v  # -v removes old data if needed
 ./deploy.sh
 ```
 

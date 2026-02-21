@@ -17,9 +17,8 @@ ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-admin}"
 REALM_NAME="personal-finance"
 FRONTEND_CLIENT_ID="frontend"
 
-# Domain configuration from environment (defaults to localhost)
-APP_DOMAIN="${APP_DOMAIN:-localhost}"
-FRONTEND_PORT="${FRONTEND_PORT:-3000}"
+# Frontend URL from environment (defaults to localhost:3000)
+FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"
 
 # Backend service clients (one per microservice)
 USER_SERVICE_CLIENT="user-service"
@@ -127,10 +126,10 @@ if echo "$FRONTEND_CLIENT_RESPONSE" | grep -q "\"clientId\":\"${FRONTEND_CLIENT_
       \"publicClient\": true,
       \"directAccessGrantsEnabled\": true,
       \"standardFlowEnabled\": true,
-      \"redirectUris\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"],
-      \"webOrigins\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}\"],
+      \"redirectUris\": [\"${FRONTEND_URL}/*\"],
+      \"webOrigins\": [\"${FRONTEND_URL}\"],
       \"attributes\": {
-        \"post.logout.redirect.uris\": \"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"
+        \"post.logout.redirect.uris\": \"${FRONTEND_URL}/*\"
       }
     }"
 else
@@ -144,10 +143,10 @@ else
       \"publicClient\": true,
       \"directAccessGrantsEnabled\": true,
       \"standardFlowEnabled\": true,
-      \"redirectUris\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"],
-      \"webOrigins\": [\"http://${APP_DOMAIN}:${FRONTEND_PORT}\"],
+      \"redirectUris\": [\"${FRONTEND_URL}/*\"],
+      \"webOrigins\": [\"${FRONTEND_URL}\"],
       \"attributes\": {
-        \"post.logout.redirect.uris\": \"http://${APP_DOMAIN}:${FRONTEND_PORT}/*\"
+        \"post.logout.redirect.uris\": \"${FRONTEND_URL}/*\"
       }
     }"
   # Get the newly created client UUID
