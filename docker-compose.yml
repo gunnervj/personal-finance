@@ -135,6 +135,8 @@ services:
       KEYCLOAK_ID: frontend
       KEYCLOAK_SECRET: ""
       KEYCLOAK_ISSUER: ${KEYCLOAK_URL:-http://localhost:8080}/realms/personal-finance
+      # SSL/TLS Configuration (for self-signed certificates)
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-}
       # Public Environment Variables
       NEXT_PUBLIC_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
       NEXT_PUBLIC_KEYCLOAK_REALM: personal-finance
