@@ -51,10 +51,32 @@ USER_SERVICE_URL=http://api.yourdomain.com/user
 | `USER_SERVICE_URL` | `http://localhost:8081` or `http://api.example.com/user` | Full URL for User Service API |
 | `BUDGET_SERVICE_URL` | `http://localhost:8082` or `http://api.example.com/budget` | Full URL for Budget Service API |
 | `TRANSACTION_SERVICE_URL` | `http://localhost:8083` or `http://api.example.com/transaction` | Full URL for Transaction Service API |
+| `KC_HOSTNAME` | `keycloak.example.com` | Keycloak external hostname (for reverse proxy, leave empty for localhost) |
+| `KC_PROXY` | `edge`, `reencrypt`, `passthrough`, or `none` | Keycloak proxy mode (use `edge` for SSL termination, empty for localhost) |
 | `POSTGRES_USER` | `admin` | Database username |
 | `POSTGRES_PASSWORD` | `admin` | Database password (**change in production!**) |
 | `KEYCLOAK_ADMIN_PASSWORD` | `admin` | Keycloak admin password (**change in production!**) |
 | `NEXTAUTH_SECRET` | (example) | Secret for NextAuth (**MUST change in production**, min 32 chars) |
+
+### Keycloak Proxy Configuration
+
+When deploying Keycloak behind a reverse proxy, you must configure `KC_HOSTNAME` and `KC_PROXY`:
+
+**KC_PROXY Modes:**
+- `edge` - Reverse proxy terminates SSL/TLS (most common). Use this when nginx/traefik handles HTTPS.
+- `reencrypt` - Proxy terminates SSL and re-encrypts to Keycloak
+- `passthrough` - Proxy passes SSL through to Keycloak
+- `none` or empty - No proxy (localhost development)
+
+**Example Configuration:**
+```bash
+# In .env for reverse proxy deployment:
+KC_HOSTNAME=keycloak.example.com
+KC_PROXY=edge
+KEYCLOAK_URL=https://keycloak.example.com  # Note: HTTPS
+```
+
+**Important:** When using `KC_HOSTNAME`, ensure your reverse proxy is configured to forward the original host header.
 
 ### Wildcard Domain Setup
 
@@ -68,10 +90,12 @@ For production deployments with clean URLs using subdomains (e.g., `app.example.
 2. **Use the wildcard example:**
    ```bash
    cp .env.wildcard-example .env
-   nano .env  # Edit with your domain
+   nano .env  # Edit with your domain and set KC_HOSTNAME, KC_PROXY
    ```
 
 3. **Set up reverse proxy** (nginx/traefik) to route subdomains to containers
+   - Ensure `proxy_set_header Host $host;` (nginx) or equivalent is configured
+   - Forward X-Forwarded-* headers for proper Keycloak operation
 
 **After changing .env**, restart the services:
 ```bash
