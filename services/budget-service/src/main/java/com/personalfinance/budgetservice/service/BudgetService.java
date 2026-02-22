@@ -160,6 +160,7 @@ public class BudgetService {
         // Validate all expense types exist and belong to user
         List<UUID> expenseTypeIds = items.stream()
             .map(BudgetItemRequest::expenseTypeId)
+            .distinct()
             .toList();
 
         List<ExpenseType> expenseTypes = expenseTypeRepository.list("id in ?1", expenseTypeIds);
