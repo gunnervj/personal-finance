@@ -14,6 +14,12 @@ function LoginContent() {
     signIn("keycloak", { callbackUrl });
   };
 
+  const handleRegister = () => {
+    // Use signIn so NextAuth generates the state cookie before redirecting.
+    // prompt=create tells Keycloak to show the registration form (supported in Keycloak 24+).
+    signIn("keycloak", { callbackUrl }, { prompt: "create" });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md p-8 bg-card border border-border/50 rounded-2xl card-glow">
@@ -50,9 +56,7 @@ function LoginContent() {
         <p className="mt-6 text-center text-sm text-foreground-muted">
           Don't have an account?{" "}
           <button
-            onClick={() => {
-              window.location.href = `${process.env.NEXT_PUBLIC_KEYCLOAK_URL}/realms/${process.env.NEXT_PUBLIC_KEYCLOAK_REALM}/protocol/openid-connect/registrations?client_id=${process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID}&redirect_uri=${window.location.origin}/api/auth/callback/keycloak&response_type=code`;
-            }}
+            onClick={handleRegister}
             className="text-primary hover:text-primary-hover transition-colors font-medium"
           >
             Register here
