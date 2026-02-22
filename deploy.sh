@@ -42,27 +42,14 @@ infra_running() {
     docker ps --filter "status=running" --format "{{.Names}}" | grep -q "personal-finance[_-]postgres"
 }
 
-# If personal-finance-net exists but was created manually (no compose label),
-# remove it so docker-compose.infra.yml can recreate it with the correct label.
-# Only called before deploy_infra — safe because compose is about to recreate
-# the infra containers anyway.
-_fix_network_ownership() {
+# Create the shared network if it does not exist yet.
+# All compose files declare it as external so none of them own it —
+# this avoids Docker Compose label conflicts entirely.
+_ensure_network_exists() {
     local network="personal-finance-net"
-    if docker network inspect "$network" > /dev/null 2>&1; then
-        local label
-        label=$(docker network inspect "$network" \
-            --format '{{index .Labels "com.docker.compose.network"}}' 2>/dev/null)
-        if [ -z "$label" ]; then
-            info "Removing manually-created network $network (will be recreated by compose)..."
-            # Disconnect any containers on it first
-            local containers
-            containers=$(docker network inspect "$network" \
-                --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null)
-            for c in $containers; do
-                docker network disconnect -f "$network" "$c" 2>/dev/null || true
-            done
-            docker network rm "$network" 2>/dev/null || true
-        fi
+    if ! docker network inspect "$network" > /dev/null 2>&1; then
+        info "Creating shared network $network..."
+        docker network create "$network"
     fi
 }
 
@@ -145,7 +132,7 @@ print_urls() {
 # ── Deployment functions ──────────────────────────────────────────────────────
 deploy_infra() {
     header "Infrastructure (PostgreSQL + Keycloak)"
-    _fix_network_ownership
+    _ensure_network_exists
     docker compose -f docker-compose.infra.yml up -d
     ensure_aliases
     wait_for_keycloak
@@ -154,6 +141,7 @@ deploy_infra() {
 
 deploy_services() {
     header "Backend Services"
+    _ensure_network_exists
     ensure_aliases
     docker compose -f docker-compose.services.yml up -d --build
     info "Waiting for services to initialise..."
@@ -163,6 +151,7 @@ deploy_services() {
 
 deploy_frontend() {
     header "Frontend"
+    _ensure_network_exists
     ensure_aliases
     docker compose -f docker-compose.frontend.yml up -d --build
     success "Frontend deployed"

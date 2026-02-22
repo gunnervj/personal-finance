@@ -15,6 +15,9 @@ fi
 
 echo -e "${BLUE}Starting Personal Finance...${NC}"
 
+# Ensure the shared network exists (all compose files declare it external)
+docker network create personal-finance-net 2>/dev/null || true
+
 docker compose -f docker-compose.infra.yml    start 2>/dev/null || \
     docker compose -f docker-compose.infra.yml up -d
 

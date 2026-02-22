@@ -1,11 +1,17 @@
-.PHONY: infra-up infra-stop services-up services-down services-restart frontend-up frontend-down frontend-restart all-up all-down logs
+.PHONY: network infra-up infra-stop infra-destroy services-up services-down services-restart service frontend-up frontend-down frontend-restart all-up all-down logs-infra logs-services logs-frontend
 
 # Suppress orphan warnings across all targets — expected in a layered compose setup
 export COMPOSE_IGNORE_ORPHANS=1
 
+# ── Shared network ────────────────────────────────────────────────────────────
+# All compose files declare the network as external, so it must pre-exist.
+# This target creates it if missing; safe to call repeatedly.
+network:
+	docker network create personal-finance-net 2>/dev/null || true
+
 # ── Infrastructure (postgres + keycloak) ──────────────────────────────────────
 # Start once. Keep running across service/frontend redeployments.
-infra-up:
+infra-up: network
 	docker compose -f docker-compose.infra.yml up -d
 
 # Stop containers without deleting volumes (data is preserved)
@@ -19,7 +25,7 @@ infra-destroy:
 	docker compose -f docker-compose.infra.yml down -v
 
 # ── Backend services ──────────────────────────────────────────────────────────
-services-up:
+services-up: network
 	docker compose -f docker-compose.services.yml up -d --build
 
 services-down:
@@ -28,11 +34,11 @@ services-down:
 services-restart: services-down services-up
 
 # Redeploy a single service: make service NAME=budget-service
-service:
+service: network
 	docker compose -f docker-compose.services.yml up -d --build $(NAME)
 
 # ── Frontend ──────────────────────────────────────────────────────────────────
-frontend-up:
+frontend-up: network
 	docker compose -f docker-compose.frontend.yml up -d --build
 
 frontend-down:
@@ -41,7 +47,7 @@ frontend-down:
 frontend-restart: frontend-down frontend-up
 
 # ── Full stack (first-time setup or full restart) ─────────────────────────────
-all-up:
+all-up: network
 	docker compose up -d --build
 
 all-down:
