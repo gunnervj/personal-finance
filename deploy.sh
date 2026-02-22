@@ -42,34 +42,36 @@ infra_running() {
 # containers (started by the old compose setup) are connected to it.
 ensure_network() {
     local network="personal-finance-net"
+
+    # Create the network if it doesn't exist.
+    # All compose files declare it as external so none of them own it —
+    # this avoids Docker Compose label conflicts entirely.
     if ! docker network inspect "$network" > /dev/null 2>&1; then
         info "Creating shared network $network..."
         docker network create "$network"
     fi
 
-    # Ensure infra containers are on the network WITH the correct service-name alias.
-    # Handles old compose stacks (underscores) and new ones (dashes) alike.
-    # Without the alias, services cannot resolve 'postgres' / 'keycloak' hostnames.
+    # Connect infra containers with service-name aliases so that 'postgres'
+    # and 'keycloak' hostnames resolve inside the services/frontend containers.
+    # Handles both old (underscore) and new (dash) container naming conventions.
     _connect_with_alias() {
         local alias="$1" pattern="$2"
         local container
         container=$(docker ps --format "{{.Names}}" | grep "personal-finance" | grep "$pattern" | head -1)
         [ -z "$container" ] && return
 
-        # Check if already connected with the correct alias
-        local existing_aliases
-        existing_aliases=$(docker network inspect "$network" \
-            --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null)
+        # Check if already connected with the alias
+        local has_alias
+        has_alias=$(docker inspect "$container" \
+            --format "{{range .NetworkSettings.Networks}}{{range .Aliases}}{{.}} {{end}}{{end}}" 2>/dev/null)
+        if echo "$has_alias" | grep -qw "$alias"; then
+            return  # already connected with correct alias
+        fi
 
-        if echo "$existing_aliases" | grep -q "$container"; then
-            # Already connected — verify alias is present; reconnect if not
-            local has_alias
-            has_alias=$(docker inspect "$container" \
-                --format "{{range .NetworkSettings.Networks}}{{range .Aliases}}{{.}} {{end}}{{end}}" 2>/dev/null)
-            if echo "$has_alias" | grep -q "^${alias} \|  ${alias} \| ${alias}$"; then
-                return  # alias already correct
-            fi
-            info "Re-connecting $container with alias '$alias'..."
+        # Disconnect first if on the network without alias, then reconnect
+        if docker network inspect "$network" --format '{{range .Containers}}{{.Name}} {{end}}' \
+                2>/dev/null | grep -q "$container"; then
+            info "Re-connecting $container to $network with alias '$alias'..."
             docker network disconnect "$network" "$container" 2>/dev/null || true
         else
             info "Connecting $container to $network with alias '$alias'..."
@@ -120,6 +122,7 @@ print_urls() {
 # ── Deployment functions ──────────────────────────────────────────────────────
 deploy_infra() {
     header "Infrastructure (PostgreSQL + Keycloak)"
+    ensure_network
     docker compose -f docker-compose.infra.yml up -d
     wait_for_keycloak
     success "Infrastructure deployed"
