@@ -9,6 +9,7 @@ public record ExpenseTypeResponse(
     String name,
     String icon,
     Boolean isMandatory,
+    Boolean accumulate,
     Boolean canDelete,
     LocalDateTime createdAt,
     LocalDateTime updatedAt

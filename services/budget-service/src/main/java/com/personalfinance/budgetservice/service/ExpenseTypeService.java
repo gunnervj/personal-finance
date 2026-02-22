@@ -49,6 +49,7 @@ public class ExpenseTypeService {
         expenseType.name = request.name();
         expenseType.icon = request.icon();
         expenseType.isMandatory = request.isMandatory();
+        expenseType.accumulate = request.accumulate() != null ? request.accumulate() : false;
 
         repository.persist(expenseType);
         return toResponse(expenseType);
@@ -69,6 +70,7 @@ public class ExpenseTypeService {
         expenseType.name = request.name();
         expenseType.icon = request.icon();
         expenseType.isMandatory = request.isMandatory();
+        expenseType.accumulate = request.accumulate() != null ? request.accumulate() : false;
 
         repository.persist(expenseType);
         return toResponse(expenseType);
@@ -97,6 +99,7 @@ public class ExpenseTypeService {
             expenseType.name,
             expenseType.icon,
             expenseType.isMandatory,
+            expenseType.accumulate != null ? expenseType.accumulate : false,
             usageCount == 0, // canDelete
             expenseType.createdAt,
             expenseType.updatedAt

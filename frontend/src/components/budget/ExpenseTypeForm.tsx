@@ -25,6 +25,7 @@ export const ExpenseTypeForm: React.FC<ExpenseTypeFormProps> = ({
     name: expenseType?.name || '',
     icon: expenseType?.icon || 'sparkles',
     isMandatory: expenseType?.isMandatory ?? true,
+    accumulate: expenseType?.accumulate ?? false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -84,6 +85,22 @@ export const ExpenseTypeForm: React.FC<ExpenseTypeFormProps> = ({
             <span className="font-medium">Mandatory Expense</span>
             <p className="text-sm text-gray-400 mt-1">
               Used to calculate emergency fund requirements
+            </p>
+          </label>
+        </div>
+
+        <div className="flex items-center gap-3 p-4 bg-gray-800 border border-gray-700 rounded-lg">
+          <input
+            type="checkbox"
+            id="accumulate"
+            checked={formData.accumulate ?? false}
+            onChange={(e) => setFormData({ ...formData, accumulate: e.target.checked })}
+            className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-2 focus:ring-blue-500"
+          />
+          <label htmlFor="accumulate" className="text-white">
+            <span className="font-medium">Accumulate Unspent Budget</span>
+            <p className="text-sm text-gray-400 mt-1">
+              Unspent monthly budget carries forward to future months
             </p>
           </label>
         </div>

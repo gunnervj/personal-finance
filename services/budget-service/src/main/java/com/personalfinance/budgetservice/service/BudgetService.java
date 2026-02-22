@@ -226,6 +226,7 @@ public class BudgetService {
             expenseType.name,
             expenseType.icon,
             expenseType.isMandatory,
+            expenseType.accumulate != null ? expenseType.accumulate : false,
             false, // canDelete not relevant here
             expenseType.createdAt,
             expenseType.updatedAt

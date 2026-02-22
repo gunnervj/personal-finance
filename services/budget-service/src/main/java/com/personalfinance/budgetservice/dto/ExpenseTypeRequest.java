@@ -14,5 +14,7 @@ public record ExpenseTypeRequest(
     String icon,
 
     @NotNull(message = "Mandatory flag is required")
-    Boolean isMandatory
+    Boolean isMandatory,
+
+    Boolean accumulate
 ) {}

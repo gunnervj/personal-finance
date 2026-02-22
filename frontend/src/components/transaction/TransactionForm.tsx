@@ -194,7 +194,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       });
     }
     return acc;
-  }, [] as { value: string; label: string }[]);
+  }, [] as { value: string; label: string }[]).sort((a, b) => a.label.localeCompare(b.label));
 
   const selectedBudgetItem = budgetItems.find(
     item => item.budgetItemId === formData.budgetItemId

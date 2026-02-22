@@ -26,6 +26,9 @@ public class ExpenseType {
     @Column(name = "is_mandatory", nullable = false)
     public Boolean isMandatory = true;
 
+    @Column(name = "accumulate", nullable = false)
+    public Boolean accumulate = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     public LocalDateTime createdAt;
 

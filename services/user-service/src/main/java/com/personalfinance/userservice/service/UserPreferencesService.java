@@ -6,6 +6,7 @@ import com.personalfinance.userservice.entity.UserPreferences;
 import com.personalfinance.userservice.repository.UserPreferencesRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 import java.util.HashMap;
@@ -16,6 +17,9 @@ public class UserPreferencesService {
 
     @Inject
     UserPreferencesRepository repository;
+
+    @Inject
+    EntityManager entityManager;
 
     public PreferencesResponse getPreferences(String email) {
         return repository.findByEmail(email)
@@ -35,6 +39,7 @@ public class UserPreferencesService {
 
         updatePreferences(prefs, request);
         repository.persist(prefs);
+        entityManager.flush();
 
         return toResponse(prefs, false);
     }

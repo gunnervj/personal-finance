@@ -7,6 +7,7 @@ export interface ExpenseType {
   name: string;
   icon: string;
   isMandatory: boolean;
+  accumulate: boolean;
   canDelete: boolean;
   createdAt: string;
   updatedAt: string;
@@ -16,6 +17,7 @@ export interface ExpenseTypeRequest {
   name: string;
   icon: string;
   isMandatory: boolean;
+  accumulate?: boolean;
 }
 
 // Budget interfaces

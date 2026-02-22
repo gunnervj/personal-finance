@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { PreferencesModal } from '@/components/PreferencesModal';
 import { preferencesApi, UserPreferences } from '@/lib/api/preferences';
 import { budgetApi, Budget, expenseTypeApi, ExpenseType } from '@/lib/api/budget';
@@ -10,6 +10,8 @@ import { EmergencyFundWidget } from '@/components/dashboard/EmergencyFundWidget'
 import { ExpenseDistributionChart } from '@/components/dashboard/ExpenseDistributionChart';
 import { MonthlyComparisonChart } from '@/components/dashboard/MonthlyComparisonChart';
 import { RecentTransactionsPanel } from '@/components/dashboard/RecentTransactionsPanel';
+import { BurnRateWidget, BurnRateItem } from '@/components/dashboard/BurnRateWidget';
+import { AccumulationWidget, AccumulationItem } from '@/components/dashboard/AccumulationWidget';
 
 interface DashboardClientProps {
   userEmail: string;
@@ -18,6 +20,7 @@ interface DashboardClientProps {
 interface DashboardData {
   preferences: UserPreferences | null;
   budget: Budget | null;
+  expenseTypes: ExpenseType[];
   monthlyExpenses: number;
   budgetTotal: number;
   expenseTypeData: Array<{ name: string; amount: number; color: string }>;
@@ -32,9 +35,28 @@ interface DashboardData {
 }
 
 export function DashboardClient({ userEmail }: DashboardClientProps) {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+
+  // Expense Distribution state
+  const [distributionMonth, setDistributionMonth] = useState(currentMonth);
+  const [distributionYear, setDistributionYear] = useState(currentYear);
+  const [distributionData, setDistributionData] = useState<Array<{ name: string; amount: number; color: string }>>([]);
+
+  // Burn Rate state
+  const [burnRateMonth, setBurnRateMonth] = useState(currentMonth);
+  const [burnRateYear, setBurnRateYear] = useState(currentYear);
+  const [burnRateItems, setBurnRateItems] = useState<BurnRateItem[]>([]);
+
+  // Accumulation state
+  const [accumulationMonth, setAccumulationMonth] = useState(currentMonth);
+  const [accumulationYear, setAccumulationYear] = useState(currentYear);
+  const [accumulationItems, setAccumulationItems] = useState<AccumulationItem[]>([]);
 
   useEffect(() => {
     loadDashboard();
@@ -42,7 +64,6 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
 
   const loadDashboard = async () => {
     try {
-      // Check preferences first
       const prefs = await preferencesApi.getPreferences();
       if (prefs.isFirstTime) {
         setShowPreferencesModal(true);
@@ -50,9 +71,6 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
         return;
       }
 
-      // Load all dashboard data in parallel
-      const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth() + 1;
       const previousYear = currentYear - 1;
 
       const [
@@ -87,7 +105,7 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
         return {
           name: expenseType?.name || 'Unknown',
           amount: item.totalAmount,
-          color: '', // Will be set by the chart component
+          color: '',
         };
       });
 
@@ -118,43 +136,233 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
         };
       });
 
-      setDashboardData({
+      const data: DashboardData = {
         preferences: prefs,
         budget,
+        expenseTypes,
         monthlyExpenses: monthlySummary.totalExpenses,
         budgetTotal,
         expenseTypeData,
         monthlyComparison,
         recentTransactions: formattedTransactions,
-      });
+      };
+
+      setDashboardData(data);
+      setDistributionData(expenseTypeData);
+
+      // Compute initial burn rate and accumulation for current month
+      if (budget) {
+        computeBurnRateItems(budget, expenseTypes, expenseTypeSummary, currentMonth);
+        computeAccumulationItems(budget, expenseTypes, currentYear, currentMonth);
+      }
     } catch (error) {
       console.error('Failed to load dashboard:', error);
-      // Show modal on error (first-time user might not have preferences yet)
       setShowPreferencesModal(true);
     } finally {
       setLoading(false);
     }
   };
 
+  // ---- Expense Distribution Navigation ----
+  const fetchDistributionData = useCallback(async (year: number, month: number) => {
+    try {
+      const [expenseTypes, summary] = await Promise.all([
+        expenseTypeApi.list().catch(() => []),
+        transactionApi.getExpenseTypeSummary(year, month).catch(() => []),
+      ]);
+      const data = summary.map((item: any) => {
+        const et = expenseTypes.find((e: ExpenseType) => e.id === item.expenseTypeId);
+        return { name: et?.name || 'Unknown', amount: item.totalAmount, color: '' };
+      });
+      setDistributionData(data);
+    } catch (err) {
+      console.error('Failed to fetch distribution data:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (dashboardData) {
+      fetchDistributionData(distributionYear, distributionMonth);
+    }
+  }, [distributionMonth, distributionYear, dashboardData, fetchDistributionData]);
+
+  const handleDistributionPrevMonth = () => {
+    if (distributionMonth === 1) {
+      setDistributionMonth(12);
+      setDistributionYear(y => y - 1);
+    } else {
+      setDistributionMonth(m => m - 1);
+    }
+  };
+
+  const handleDistributionNextMonth = () => {
+    if (distributionYear === currentYear && distributionMonth === currentMonth) return;
+    if (distributionMonth === 12) {
+      setDistributionMonth(1);
+      setDistributionYear(y => y + 1);
+    } else {
+      setDistributionMonth(m => m + 1);
+    }
+  };
+
+  // ---- Burn Rate ----
+  const computeBurnRateItems = (
+    budget: Budget,
+    expenseTypes: ExpenseType[],
+    spendingByType: any[],
+    month: number
+  ) => {
+    const applicable = budget.items.filter(
+      item => !item.isOneTime || item.applicableMonth === month
+    );
+    const items: BurnRateItem[] = applicable.map(item => {
+      const spent = spendingByType.find((s: any) => s.expenseTypeId === item.expenseType.id)?.totalAmount || 0;
+      const pct = item.amount > 0 ? (spent / item.amount) * 100 : 0;
+      return {
+        expenseTypeId: item.expenseType.id,
+        name: item.expenseType.name,
+        icon: item.expenseType.icon,
+        budgetAmount: item.amount,
+        spentAmount: spent,
+        burnPercentage: pct,
+      };
+    }).sort((a, b) => b.burnPercentage - a.burnPercentage);
+    setBurnRateItems(items);
+  };
+
+  const fetchBurnRateData = useCallback(async (year: number, month: number) => {
+    if (!dashboardData?.budget) return;
+    try {
+      const spendingByType = await transactionApi.getExpenseTypeSummary(year, month).catch(() => []);
+      computeBurnRateItems(dashboardData.budget, dashboardData.expenseTypes, spendingByType, month);
+    } catch (err) {
+      console.error('Failed to fetch burn rate data:', err);
+    }
+  }, [dashboardData]);
+
+  useEffect(() => {
+    if (dashboardData?.budget) {
+      fetchBurnRateData(burnRateYear, burnRateMonth);
+    }
+  }, [burnRateMonth, burnRateYear, dashboardData, fetchBurnRateData]);
+
+  const handleBurnRatePrevMonth = () => {
+    if (burnRateMonth === 1) {
+      setBurnRateMonth(12);
+      setBurnRateYear(y => y - 1);
+    } else {
+      setBurnRateMonth(m => m - 1);
+    }
+  };
+
+  const handleBurnRateNextMonth = () => {
+    if (burnRateYear === currentYear && burnRateMonth === currentMonth) return;
+    if (burnRateMonth === 12) {
+      setBurnRateMonth(1);
+      setBurnRateYear(y => y + 1);
+    } else {
+      setBurnRateMonth(m => m + 1);
+    }
+  };
+
+  // ---- Accumulation ----
+  const computeAccumulationItems = useCallback(async (
+    budget: Budget,
+    expenseTypes: ExpenseType[],
+    year: number,
+    targetMonth: number
+  ) => {
+    const accumulatingItems = budget.items.filter(
+      item => item.expenseType.accumulate && !item.isOneTime
+    );
+    if (accumulatingItems.length === 0) {
+      setAccumulationItems([]);
+      return;
+    }
+
+    try {
+      const monthsToFetch = Array.from({ length: targetMonth }, (_, i) => i + 1);
+      const spendingByMonth = await Promise.all(
+        monthsToFetch.map(m => transactionApi.getExpenseTypeSummary(year, m).catch(() => []))
+      );
+
+      const items: AccumulationItem[] = accumulatingItems.map(budgetItem => {
+        let accumulated = 0;
+        // Carry forward unspent from previous months
+        for (let i = 0; i < targetMonth - 1; i++) {
+          const monthSpending = spendingByMonth[i];
+          const spent = monthSpending.find((s: any) => s.expenseTypeId === budgetItem.expenseType.id)?.totalAmount || 0;
+          const unspent = budgetItem.amount - spent;
+          if (unspent > 0) accumulated += unspent;
+        }
+        // Add current month's budget
+        accumulated += budgetItem.amount;
+        // Subtract current month's spending
+        const currentSpending = spendingByMonth[targetMonth - 1];
+        const spentThisMonth = currentSpending.find((s: any) => s.expenseTypeId === budgetItem.expenseType.id)?.totalAmount || 0;
+
+        return {
+          expenseTypeId: budgetItem.expenseType.id,
+          name: budgetItem.expenseType.name,
+          icon: budgetItem.expenseType.icon,
+          monthlyBudget: budgetItem.amount,
+          accumulatedAmount: accumulated,
+          spentThisMonth,
+          remaining: accumulated - spentThisMonth,
+        };
+      });
+
+      setAccumulationItems(items);
+    } catch (err) {
+      console.error('Failed to compute accumulation:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (dashboardData?.budget) {
+      computeAccumulationItems(
+        dashboardData.budget,
+        dashboardData.expenseTypes,
+        accumulationYear,
+        accumulationMonth
+      );
+    }
+  }, [accumulationMonth, accumulationYear, dashboardData, computeAccumulationItems]);
+
+  const handleAccumulationPrevMonth = () => {
+    if (accumulationMonth === 1) {
+      setAccumulationMonth(12);
+      setAccumulationYear(y => y - 1);
+    } else {
+      setAccumulationMonth(m => m - 1);
+    }
+  };
+
+  const handleAccumulationNextMonth = () => {
+    if (accumulationYear === currentYear && accumulationMonth === currentMonth) return;
+    if (accumulationMonth === 12) {
+      setAccumulationMonth(1);
+      setAccumulationYear(y => y + 1);
+    } else {
+      setAccumulationMonth(m => m + 1);
+    }
+  };
+
+  // ---- Preferences Save ----
   const handleSavePreferences = async (
-    data: { currency: string; emergencyFundMonths: number; monthlySalary: number },
+    data: { currency: string; emergencyFundMonths: number; monthlySalary: number; emergencyFundSaved: number },
     avatarFile?: File
   ) => {
     try {
-      // Upload avatar first if provided
       if (avatarFile) {
         await preferencesApi.uploadAvatar(avatarFile);
       }
-
-      // Save preferences
       await preferencesApi.savePreferences(data);
-
       setShowPreferencesModal(false);
-      // Reload dashboard with new preferences
       loadDashboard();
     } catch (error) {
       console.error('Error saving preferences:', error);
-      throw error; // Re-throw so PreferencesModal can handle it
+      throw error;
     }
   };
 
@@ -170,7 +378,6 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
   }
 
   if (!dashboardData) {
-    // First-time user or preferences not yet set — show modal without dashboard content
     return (
       <PreferencesModal
         isOpen={showPreferencesModal}
@@ -219,8 +426,12 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
             <div className="lg:col-span-2 flex">
               <div className="flex-1">
                 <ExpenseDistributionChart
-                  data={dashboardData.expenseTypeData}
+                  data={distributionData}
                   currency={currency}
+                  month={distributionMonth}
+                  year={distributionYear}
+                  onPrevMonth={handleDistributionPrevMonth}
+                  onNextMonth={handleDistributionNextMonth}
                 />
               </div>
             </div>
@@ -229,7 +440,7 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
             <div className="lg:col-span-2">
               <MonthlyComparisonChart
                 data={dashboardData.monthlyComparison}
-                currentYear={new Date().getFullYear()}
+                currentYear={currentYear}
                 currency={currency}
               />
             </div>
@@ -241,6 +452,32 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
                 currency={currency}
               />
             </div>
+
+            {/* Row 3: Burn Rate Widget (full width) */}
+            <div className="lg:col-span-3">
+              <BurnRateWidget
+                items={burnRateItems}
+                month={burnRateMonth}
+                year={burnRateYear}
+                currency={currency}
+                onPrevMonth={handleBurnRatePrevMonth}
+                onNextMonth={handleBurnRateNextMonth}
+              />
+            </div>
+
+            {/* Row 4: Accumulation Widget (full width) */}
+            {accumulationItems.length > 0 && (
+              <div className="lg:col-span-3">
+                <AccumulationWidget
+                  items={accumulationItems}
+                  month={accumulationMonth}
+                  year={accumulationYear}
+                  currency={currency}
+                  onPrevMonth={handleAccumulationPrevMonth}
+                  onNextMonth={handleAccumulationNextMonth}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

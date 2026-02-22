@@ -9,5 +9,6 @@
     <include file="db/changelog/002-create-budgets.xml"/>
     <include file="db/changelog/003-create-budget-items.xml"/>
     <include file="db/changelog/004-refactor-to-yearly-budgets.xml"/>
+    <include file="db/changelog/005-add-accumulate-to-expense-types.xml"/>
 
 </databaseChangeLog>
