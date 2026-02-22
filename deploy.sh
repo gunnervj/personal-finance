@@ -45,12 +45,40 @@ ensure_network() {
     if ! docker network inspect "$network" > /dev/null 2>&1; then
         info "Creating shared network $network..."
         docker network create "$network"
-        # Connect existing infra containers that may be on the old default network
-        while IFS= read -r container; do
-            info "Connecting $container to $network..."
-            docker network connect "$network" "$container" 2>/dev/null || true
-        done < <(docker ps --format "{{.Names}}" | grep "personal-finance" | grep -E "postgres|keycloak")
     fi
+
+    # Ensure infra containers are on the network WITH the correct service-name alias.
+    # Handles old compose stacks (underscores) and new ones (dashes) alike.
+    # Without the alias, services cannot resolve 'postgres' / 'keycloak' hostnames.
+    _connect_with_alias() {
+        local alias="$1" pattern="$2"
+        local container
+        container=$(docker ps --format "{{.Names}}" | grep "personal-finance" | grep "$pattern" | head -1)
+        [ -z "$container" ] && return
+
+        # Check if already connected with the correct alias
+        local existing_aliases
+        existing_aliases=$(docker network inspect "$network" \
+            --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null)
+
+        if echo "$existing_aliases" | grep -q "$container"; then
+            # Already connected — verify alias is present; reconnect if not
+            local has_alias
+            has_alias=$(docker inspect "$container" \
+                --format "{{range .NetworkSettings.Networks}}{{range .Aliases}}{{.}} {{end}}{{end}}" 2>/dev/null)
+            if echo "$has_alias" | grep -q "^${alias} \|  ${alias} \| ${alias}$"; then
+                return  # alias already correct
+            fi
+            info "Re-connecting $container with alias '$alias'..."
+            docker network disconnect "$network" "$container" 2>/dev/null || true
+        else
+            info "Connecting $container to $network with alias '$alias'..."
+        fi
+        docker network connect --alias "$alias" "$network" "$container"
+    }
+
+    _connect_with_alias "postgres" "postgres"
+    _connect_with_alias "keycloak" "keycloak"
 }
 
 wait_for_keycloak() {
