@@ -119,6 +119,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+        NEXT_PUBLIC_KEYCLOAK_REALM: personal-finance
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: frontend
+        NEXT_PUBLIC_USER_SERVICE_URL: ${USER_SERVICE_URL:-http://localhost:8081}
+        NEXT_PUBLIC_BUDGET_SERVICE_URL: ${BUDGET_SERVICE_URL:-http://localhost:8082}
+        NEXT_PUBLIC_TRANSACTION_SERVICE_URL: ${TRANSACTION_SERVICE_URL:-http://localhost:8083}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
