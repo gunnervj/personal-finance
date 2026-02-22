@@ -6,7 +6,13 @@ export const authOptions: NextAuthOptions = {
     KeycloakProvider({
       clientId: process.env.KEYCLOAK_ID!,
       clientSecret: process.env.KEYCLOAK_SECRET || "",
+      // External HTTPS URL - must match the 'iss' claim in JWT tokens issued by Keycloak
       issuer: process.env.KEYCLOAK_ISSUER!,
+      // Use internal Docker URL for OIDC discovery to avoid external DNS resolution inside container.
+      // Falls back to issuer-derived URL when KEYCLOAK_INTERNAL_ISSUER is not set (localhost dev).
+      ...(process.env.KEYCLOAK_INTERNAL_ISSUER && {
+        wellKnown: `${process.env.KEYCLOAK_INTERNAL_ISSUER}/.well-known/openid-configuration`,
+      }),
     }),
   ],
   callbacks: {
@@ -35,7 +41,8 @@ export const authOptions: NextAuthOptions = {
     async signOut({ token }) {
       if (token?.idToken) {
         try {
-          const issuerUrl = process.env.KEYCLOAK_ISSUER!;
+          // Use internal URL for logout to avoid external DNS resolution inside Docker
+          const issuerUrl = process.env.KEYCLOAK_INTERNAL_ISSUER || process.env.KEYCLOAK_ISSUER!;
           const logoutUrl = `${issuerUrl}/protocol/openid-connect/logout`;
           await fetch(logoutUrl, {
             method: "POST",
