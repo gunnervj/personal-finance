@@ -170,7 +170,14 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
   }
 
   if (!dashboardData) {
-    return null;
+    // First-time user or preferences not yet set — show modal without dashboard content
+    return (
+      <PreferencesModal
+        isOpen={showPreferencesModal}
+        onSave={handleSavePreferences}
+        userEmail={userEmail}
+      />
+    );
   }
 
   const currency = dashboardData.preferences?.currency || 'USD';
