@@ -38,6 +38,21 @@ infra_running() {
     docker ps --filter "status=running" --format "{{.Names}}" | grep -q "personal-finance[_-]postgres"
 }
 
+# Ensure the shared network exists and that any already-running infra
+# containers (started by the old compose setup) are connected to it.
+ensure_network() {
+    local network="personal-finance-net"
+    if ! docker network inspect "$network" > /dev/null 2>&1; then
+        info "Creating shared network $network..."
+        docker network create "$network"
+        # Connect existing infra containers that may be on the old default network
+        while IFS= read -r container; do
+            info "Connecting $container to $network..."
+            docker network connect "$network" "$container" 2>/dev/null || true
+        done < <(docker ps --format "{{.Names}}" | grep "personal-finance" | grep -E "postgres|keycloak")
+    fi
+}
+
 wait_for_keycloak() {
     info "Waiting for Keycloak to be ready (up to 3 min)..."
     local timeout=180 elapsed=0
@@ -84,6 +99,7 @@ deploy_infra() {
 
 deploy_services() {
     header "Backend Services"
+    ensure_network
     docker compose -f docker-compose.services.yml up -d --build
     info "Waiting for services to initialise..."
     sleep 8
@@ -92,6 +108,7 @@ deploy_services() {
 
 deploy_frontend() {
     header "Frontend"
+    ensure_network
     docker compose -f docker-compose.frontend.yml up -d --build
     success "Frontend deployed"
 }
