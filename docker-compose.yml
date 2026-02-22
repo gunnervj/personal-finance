@@ -140,7 +140,11 @@ services:
       KEYCLOAK_INTERNAL_ISSUER: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}/realms/personal-finance
       # SSL/TLS Configuration (for self-signed certificates)
       NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-}
-      # Public Environment Variables
+      # Server-side URLs (used by Next.js API routes - internal Docker network)
+      USER_SERVICE_URL: http://user-service:8081
+      BUDGET_SERVICE_URL: http://budget-service:8082
+      TRANSACTION_SERVICE_URL: http://transaction-service:8083
+      # Public Environment Variables (browser-side - uses external URLs via HAProxy)
       NEXT_PUBLIC_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
       NEXT_PUBLIC_KEYCLOAK_REALM: personal-finance
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: frontend
