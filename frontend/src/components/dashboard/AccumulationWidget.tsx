@@ -1,6 +1,7 @@
 'use client';
 
 import { TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getIconComponent } from '@/components/budget/IconPicker';
 
 export interface AccumulationItem {
   expenseTypeId: string;
@@ -83,6 +84,7 @@ export function AccumulationWidget({
               ? Math.min((item.spentThisMonth / item.accumulatedAmount) * 100, 100)
               : 0;
             const isPositive = item.remaining >= 0;
+            const ItemIcon = getIconComponent(item.icon);
 
             return (
               <div
@@ -91,7 +93,7 @@ export function AccumulationWidget({
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base">{item.icon}</span>
+                    <ItemIcon className="w-4 h-4 flex-shrink-0 text-foreground-muted" />
                     <span className="text-sm font-medium text-foreground truncate">{item.name}</span>
                   </div>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ml-2 ${

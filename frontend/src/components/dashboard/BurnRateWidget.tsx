@@ -1,6 +1,7 @@
 'use client';
 
 import { Flame, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getIconComponent } from '@/components/budget/IconPicker';
 
 export interface BurnRateItem {
   expenseTypeId: string;
@@ -88,6 +89,7 @@ export function BurnRateWidget({
             const barWidth = Math.min(item.burnPercentage, 100);
             const isOverBudget = item.burnPercentage > 100;
 
+            const ItemIcon = getIconComponent(item.icon);
             return (
               <div
                 key={item.expenseTypeId}
@@ -95,7 +97,7 @@ export function BurnRateWidget({
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base">{item.icon}</span>
+                    <ItemIcon className="w-4 h-4 flex-shrink-0 text-foreground-muted" />
                     <span className="text-sm font-medium text-foreground truncate">{item.name}</span>
                   </div>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ml-2 ${colors.badge}`}>
