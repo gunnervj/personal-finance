@@ -35,7 +35,7 @@ check_prereqs() {
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 infra_running() {
-    docker ps --filter "name=personal-finance-postgres-1" --filter "status=running" -q | grep -q .
+    docker ps --filter "status=running" --format "{{.Names}}" | grep -q "personal-finance[_-]postgres"
 }
 
 wait_for_keycloak() {
