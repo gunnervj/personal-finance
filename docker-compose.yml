@@ -38,7 +38,7 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
       # Proxy configuration (edge, reencrypt, passthrough, none)
-      KC_PROXY: ${KC_PROXY:-}
+      KC_PROXY: ${KC_PROXY:-none}
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
       interval: 10s
