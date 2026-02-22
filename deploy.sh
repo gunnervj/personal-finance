@@ -42,22 +42,41 @@ infra_running() {
     docker ps --filter "status=running" --format "{{.Names}}" | grep -q "personal-finance[_-]postgres"
 }
 
-# Ensure the shared network exists and that any already-running infra
-# containers (started by the old compose setup) are connected to it.
-ensure_network() {
+# If personal-finance-net exists but was created manually (no compose label),
+# remove it so docker-compose.infra.yml can recreate it with the correct label.
+# Only called before deploy_infra — safe because compose is about to recreate
+# the infra containers anyway.
+_fix_network_ownership() {
+    local network="personal-finance-net"
+    if docker network inspect "$network" > /dev/null 2>&1; then
+        local label
+        label=$(docker network inspect "$network" \
+            --format '{{index .Labels "com.docker.compose.network"}}' 2>/dev/null)
+        if [ -z "$label" ]; then
+            info "Removing manually-created network $network (will be recreated by compose)..."
+            # Disconnect any containers on it first
+            local containers
+            containers=$(docker network inspect "$network" \
+                --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null)
+            for c in $containers; do
+                docker network disconnect -f "$network" "$c" 2>/dev/null || true
+            done
+            docker network rm "$network" 2>/dev/null || true
+        fi
+    fi
+}
+
+# Ensure DNS aliases for infra containers on the shared network so that
+# 'postgres' and 'keycloak' hostnames resolve inside services/frontend containers.
+# Handles both old (underscore) and new (dash) Docker Compose naming conventions.
+ensure_aliases() {
     local network="personal-finance-net"
 
-    # Create the network if it doesn't exist.
-    # All compose files declare it as external so none of them own it —
-    # this avoids Docker Compose label conflicts entirely.
     if ! docker network inspect "$network" > /dev/null 2>&1; then
-        info "Creating shared network $network..."
-        docker network create "$network"
+        warn "Network $network not found — make sure infra is running."
+        return
     fi
 
-    # Connect infra containers with service-name aliases so that 'postgres'
-    # and 'keycloak' hostnames resolve inside the services/frontend containers.
-    # Handles both old (underscore) and new (dash) container naming conventions.
     _connect_with_alias() {
         local alias="$1" pattern="$2"
         local container
@@ -126,15 +145,16 @@ print_urls() {
 # ── Deployment functions ──────────────────────────────────────────────────────
 deploy_infra() {
     header "Infrastructure (PostgreSQL + Keycloak)"
-    ensure_network
+    _fix_network_ownership
     docker compose -f docker-compose.infra.yml up -d
+    ensure_aliases
     wait_for_keycloak
     success "Infrastructure deployed"
 }
 
 deploy_services() {
     header "Backend Services"
-    ensure_network
+    ensure_aliases
     docker compose -f docker-compose.services.yml up -d --build
     info "Waiting for services to initialise..."
     sleep 8
@@ -143,7 +163,7 @@ deploy_services() {
 
 deploy_frontend() {
     header "Frontend"
-    ensure_network
+    ensure_aliases
     docker compose -f docker-compose.frontend.yml up -d --build
     success "Frontend deployed"
 }

@@ -10,7 +10,6 @@
 
 networks:
   finance-net:
-    external: true
     name: personal-finance-net
 
 services:
