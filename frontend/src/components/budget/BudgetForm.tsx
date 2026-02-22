@@ -18,6 +18,7 @@ import {
 import { preferencesApi } from '@/lib/api/preferences';
 import { getIconComponent } from './IconPicker';
 import { useToast } from '../ui/Toast';
+import { ExpenseTypeForm } from './ExpenseTypeForm';
 
 interface BudgetFormProps {
   isOpen: boolean;
@@ -50,6 +51,8 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
   const [monthlySalary, setMonthlySalary] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showExpenseTypeForm, setShowExpenseTypeForm] = useState(false);
+  const [newTypeForItemTempId, setNewTypeForItemTempId] = useState<string | null>(null);
 
   const { showError, showSuccess } = useToast();
 
@@ -122,15 +125,33 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
     };
   }, [recurringItems, oneTimeItems, expenseTypes]);
 
-  const addRecurring = () => {
-    if (expenseTypes.length === 0) {
-      showError('Please create expense types first before adding budget items.');
-      return;
+  const sortedExpenseTypes = [...expenseTypes].sort((a, b) => a.name.localeCompare(b.name));
+
+  const openCreateExpenseType = (tempId: string) => {
+    setNewTypeForItemTempId(tempId);
+    setShowExpenseTypeForm(true);
+  };
+
+  const handleExpenseTypeCreated = async () => {
+    setShowExpenseTypeForm(false);
+    const types = await expenseTypeApi.list().catch(() => expenseTypes);
+    setExpenseTypes(types);
+    // Auto-select newly created type (last one alphabetically won't work; use the new one by diff)
+    if (newTypeForItemTempId) {
+      const newType = types.find(t => !expenseTypes.some(e => e.id === t.id));
+      if (newType) {
+        updateItem(newTypeForItemTempId, { expenseTypeId: newType.id });
+      }
     }
+    setNewTypeForItemTempId(null);
+  };
+
+  const addRecurring = () => {
+    const tempId = Date.now().toString();
     setItems([
       ...items,
       {
-        tempId: Date.now().toString(),
+        tempId,
         expenseTypeId: '',
         amount: 0,
         isOneTime: false,
@@ -242,6 +263,12 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
   };
 
   return (
+    <>
+    <ExpenseTypeForm
+      isOpen={showExpenseTypeForm}
+      onClose={() => { setShowExpenseTypeForm(false); setNewTypeForItemTempId(null); }}
+      onSuccess={handleExpenseTypeCreated}
+    />
     <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? `Edit Budget ${year}` : "Create Yearly Budget"}>
       <form onSubmit={handleSubmit} className="space-y-6">
         {!isEditMode && (
@@ -307,7 +334,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
                         required
                       >
                         <option value="">Select...</option>
-                        {expenseTypes.map(type => (
+                        {sortedExpenseTypes.map(type => (
                           <option key={type.id} value={type.id}>
                             {type.name}
                           </option>
@@ -333,7 +360,17 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
                       </div>
                     )}
 
-                    <div className="pb-2">
+                    <div className="pb-2 flex gap-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => openCreateExpenseType(item.tempId)}
+                        title="Create new expense type"
+                        className="whitespace-nowrap"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
                       <Button
                         type="button"
                         size="sm"
@@ -381,7 +418,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
                         required
                       >
                         <option value="">Select...</option>
-                        {expenseTypes.map(type => (
+                        {sortedExpenseTypes.map(type => (
                           <option key={type.id} value={type.id}>
                             {type.name}
                           </option>
@@ -422,7 +459,17 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
                       </div>
                     )}
 
-                    <div className="pb-2">
+                    <div className="pb-2 flex gap-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => openCreateExpenseType(item.tempId)}
+                        title="Create new expense type"
+                        className="whitespace-nowrap"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
                       <Button
                         type="button"
                         size="sm"
@@ -469,5 +516,6 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({
         </div>
       </form>
     </Modal>
+    </>
   );
 };

@@ -1,6 +1,18 @@
+# Full-stack convenience file — starts everything in one command.
+# For targeted deployments use the layer-specific files:
+#   docker-compose.infra.yml    — postgres + keycloak (start once, keep running)
+#   docker-compose.services.yml — backend microservices
+#   docker-compose.frontend.yml — Next.js frontend
+
+networks:
+  finance-net:
+    name: personal-finance-net
+
 services:
   postgres:
     image: postgres:16
+    networks:
+      - finance-net
     ports:
       - "5432:5432"
     volumes:
@@ -19,6 +31,8 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     command: start-dev
+    networks:
+      - finance-net
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
     depends_on:
@@ -32,12 +46,10 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      # Hostname configuration (for reverse proxy deployments)
       KC_HOSTNAME: ${KC_HOSTNAME:-}
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
-      # Proxy configuration (edge, reencrypt, passthrough, none)
       KC_PROXY: ${KC_PROXY:-none}
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
@@ -48,6 +60,8 @@ services:
 
   keycloak-setup:
     image: curlimages/curl:latest
+    networks:
+      - finance-net
     depends_on:
       keycloak:
         condition: service_started
@@ -63,6 +77,8 @@ services:
     build:
       context: ./services/user-service
       dockerfile: Dockerfile
+    networks:
+      - finance-net
     ports:
       - "${USER_SERVICE_PORT:-8081}:8081"
     volumes:
@@ -83,6 +99,8 @@ services:
     build:
       context: ./services/budget-service
       dockerfile: Dockerfile
+    networks:
+      - finance-net
     ports:
       - "${BUDGET_SERVICE_PORT:-8082}:8082"
     depends_on:
@@ -101,6 +119,8 @@ services:
     build:
       context: ./services/transaction-service
       dockerfile: Dockerfile
+    networks:
+      - finance-net
     ports:
       - "${TRANSACTION_SERVICE_PORT:-8083}:8083"
     depends_on:
@@ -126,6 +146,8 @@ services:
         NEXT_PUBLIC_USER_SERVICE_URL: ${USER_SERVICE_URL:-http://localhost:8081}
         NEXT_PUBLIC_BUDGET_SERVICE_URL: ${BUDGET_SERVICE_URL:-http://localhost:8082}
         NEXT_PUBLIC_TRANSACTION_SERVICE_URL: ${TRANSACTION_SERVICE_URL:-http://localhost:8083}
+    networks:
+      - finance-net
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
@@ -136,22 +158,20 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      # NextAuth Configuration
       NEXTAUTH_URL: ${FRONTEND_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production-min-32-chars}
       KEYCLOAK_ID: frontend
       KEYCLOAK_SECRET: ""
-      # External issuer - must match 'iss' claim in JWT tokens (set to HTTPS URL when behind reverse proxy)
+      # External issuer - must match 'iss' claim in JWT tokens
       KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-http://keycloak:8080/realms/personal-finance}
-      # Internal issuer - used for OIDC discovery inside Docker (avoids external DNS resolution)
+      # Internal issuer - used for OIDC discovery inside Docker
       KEYCLOAK_INTERNAL_ISSUER: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}/realms/personal-finance
-      # SSL/TLS Configuration (for self-signed certificates)
       NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-}
-      # Server-side URLs (used by Next.js API routes - internal Docker network)
+      # Server-side URLs (internal Docker network)
       USER_SERVICE_URL: http://user-service:8081
       BUDGET_SERVICE_URL: http://budget-service:8082
       TRANSACTION_SERVICE_URL: http://transaction-service:8083
-      # Public Environment Variables (browser-side - uses external URLs via HAProxy)
+      # Public browser-side URLs
       NEXT_PUBLIC_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
       NEXT_PUBLIC_KEYCLOAK_REALM: personal-finance
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: frontend

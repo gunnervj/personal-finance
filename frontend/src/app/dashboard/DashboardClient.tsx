@@ -466,18 +466,16 @@ export function DashboardClient({ userEmail }: DashboardClientProps) {
             </div>
 
             {/* Row 4: Accumulation Widget (full width) */}
-            {accumulationItems.length > 0 && (
-              <div className="lg:col-span-3">
-                <AccumulationWidget
-                  items={accumulationItems}
-                  month={accumulationMonth}
-                  year={accumulationYear}
-                  currency={currency}
-                  onPrevMonth={handleAccumulationPrevMonth}
-                  onNextMonth={handleAccumulationNextMonth}
-                />
-              </div>
-            )}
+            <div className="lg:col-span-3">
+              <AccumulationWidget
+                items={accumulationItems}
+                month={accumulationMonth}
+                year={accumulationYear}
+                currency={currency}
+                onPrevMonth={handleAccumulationPrevMonth}
+                onNextMonth={handleAccumulationNextMonth}
+              />
+            </div>
           </div>
         </div>
       </div>

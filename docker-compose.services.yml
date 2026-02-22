@@ -1,0 +1,63 @@
+# Backend microservices layer: user-service, budget-service, transaction-service
+#
+# Requires infra to be running first:
+#   docker compose -f docker-compose.infra.yml up -d
+#
+# Deploy / redeploy (rebuilds images):
+#   docker compose -f docker-compose.services.yml up -d --build
+#
+# Redeploy a single service:
+#   docker compose -f docker-compose.services.yml up -d --build user-service
+
+networks:
+  finance-net:
+    external: true
+    name: personal-finance-net
+
+services:
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    networks:
+      - finance-net
+    ports:
+      - "${USER_SERVICE_PORT:-8081}:8081"
+    volumes:
+      - ./data/avatars:/app/avatars
+    environment:
+      QUARKUS_HTTP_PORT: "8081"
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      QUARKUS_OIDC_CLIENT_ID: "user-service"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: "user-service-secret"
+
+  budget-service:
+    build:
+      context: ./services/budget-service
+      dockerfile: Dockerfile
+    networks:
+      - finance-net
+    ports:
+      - "${BUDGET_SERVICE_PORT:-8082}:8082"
+    environment:
+      QUARKUS_HTTP_PORT: "8082"
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      QUARKUS_OIDC_CLIENT_ID: "budget-service"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: "budget-service-secret"
+
+  transaction-service:
+    build:
+      context: ./services/transaction-service
+      dockerfile: Dockerfile
+    networks:
+      - finance-net
+    ports:
+      - "${TRANSACTION_SERVICE_PORT:-8083}:8083"
+    environment:
+      QUARKUS_HTTP_PORT: "8083"
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      QUARKUS_OIDC_CLIENT_ID: "transaction-service"
+      QUARKUS_OIDC_CREDENTIALS_SECRET: "transaction-service-secret"

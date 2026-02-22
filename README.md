@@ -1,506 +1,111 @@
-# Personal Finance Management System
+# Personal Finance
 
-A comprehensive personal finance management application built with microservices architecture, enabling users to manage budgets, track expenses, and monitor financial health.
+A personal finance management application that helps you plan budgets, track spending, and monitor your financial health — all in one place.
 
-## 🏗️ Architecture
+---
 
-### Tech Stack
+## What it does
 
-**Frontend:**
-- Next.js 16 with App Router
-- React 19
-- TypeScript
-- TailwindCSS v4 (dark mode)
-- NextAuth.js 4.24 (Keycloak integration)
-- Lucide React (icons)
-- Inter + Poppins fonts
+Personal Finance gives you a clear picture of where your money goes each month. You set a yearly budget across your own expense categories, record transactions as you spend, and the app keeps you updated in real time on how you're tracking.
 
-**Backend:**
-- Quarkus 3.31.3 (Java)
-- 3 Microservices: user-service, budget-service, transaction-service
-- RESTful APIs with JSON
-- Liquibase for database migrations
-- OIDC for authentication
+---
 
-**Infrastructure:**
-- PostgreSQL 16 (multi-schema)
-- Keycloak 24.0 (authentication & authorization)
-- Docker Compose (local development)
+## Features
 
-### Microservices
+### Dashboard
 
-| Service | Port | Responsibility |
-|---------|------|----------------|
-| **user-service** | 8081 | User preferences, avatar management, JWT auth |
-| **budget-service** | 8082 | Expense types, budgets, budget items, JWT auth |
-| **transaction-service** | 8083 | Transaction CRUD, aggregations, JWT auth |
-| **Keycloak** | 8080 | Authentication, user management, JWT tokens |
-| **Frontend** | 3000 | Next.js UI with NextAuth.js |
+The dashboard is your financial at-a-glance view for the current month.
 
-## 🚀 Quick Start
+- **Expense Summary** — total spent this month vs your budget, with a colour-coded burn indicator (green under 50%, orange 50–80%, red 80%+)
+- **Emergency Fund** — progress toward your emergency fund target based on your mandatory expenses and savings goal
+- **Expense Distribution** — donut chart showing spending by category; navigate back through previous months
+- **Monthly Comparison** — bar chart of monthly spending for the current year vs the previous year
+- **Burn Rate** — per-category breakdown of budget consumed this month; navigate to any past month
+- **Accumulated Budget** — for categories marked as "accumulate", unspent amounts carry forward month to month; the widget shows your running pool and how much of it you've used
+- **Recent Transactions** — latest five transactions at a glance
+
+### Budget Management
+
+- Create a yearly budget with any mix of recurring monthly expenses and one-time expenses (assigned to a specific month)
+- **Custom expense types** — create your own categories (Rent, Groceries, Travel, etc.) with a chosen icon, and mark each as mandatory or optional
+  - **Mandatory** expenses feed the emergency fund calculation
+  - **Accumulate** flag — unspent budget from this category rolls forward rather than resetting each month
+- Budget creation rules: current year always available; next year only available in December; past years cannot be created
+- Edit a budget at any time to adjust amounts, add or remove categories
+- Delete a budget only if it has no recorded transactions
+- Live summary while editing: see your recurring total as a percentage of salary and the implied monthly savings
+
+### Transactions
+
+- Record an expense against any budget category
+- The expense type picker shows each category colour-coded by current burn rate (green = under budget, yellow = near limit, red = overspent) with the percentage of budget remaining shown inline
+- Edit or delete any transaction
+- Transactions table sorted newest first, loaded in pages of 10
+
+### User Preferences
+
+Set once on first login, editable any time from the user menu:
+
+- **Currency** (default USD)
+- **After-tax monthly salary** — used to show budget-as-percentage-of-salary
+- **Emergency fund target** (in months of mandatory expenses)
+- **Current emergency fund savings** — tracked separately so you can see progress
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- Docker Desktop
-- Node.js 22+
-- Maven 3.9+ (installed via Homebrew)
-- Quarkus CLI 3.31+ (installed via Homebrew)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### Starting the Application
+### Start the application
 
 ```bash
-# Clone the repository
-cd personal-finance
+# First-time setup — builds and starts everything
+./deploy.sh
 
-# Start backend services (PostgreSQL, Keycloak, microservices)
-docker-compose up -d
+# After a machine restart (no rebuild needed)
+./start.sh
 
-# Check service health
-docker-compose ps
-
-# Start frontend (runs outside Docker for hot reload)
-cd frontend
-npm install
-npm run dev
-
-# View logs
-docker-compose logs -f user-service
+# Stop without losing data
+./stop.sh
 ```
 
-**Note**: Frontend runs on host machine (not in Docker) for faster development and hot module replacement.
+Open **http://localhost:3000** and register with your email address.
 
-### Accessing Services
+---
 
-- **Frontend Application**: http://localhost:3000
-  - Landing page with "Get Started" button
-  - Login via Keycloak
-  - Dashboard (protected route)
+## Recommended first-run workflow
 
-- **Keycloak Admin Console**: http://localhost:8080/admin
-  - Username: `admin`
-  - Password: `admin`
-  - Realm: `personal-finance`
-  - Clients: `frontend`, `user-service`, `budget-service`, `transaction-service`
+1. **Register** — create an account with your email and a password
+2. **Set preferences** — enter your monthly salary, currency, and emergency fund target (the modal opens automatically on first login)
+3. **Create expense types** — go to Budgets → Expense Types and add your spending categories
+4. **Create a budget** — go to Budgets → Create Budget, assign monthly amounts to each category
+5. **Record transactions** — use the "+" button on the Transactions page to log your spending
+6. **Check the dashboard** — watch your burn rate, distribution, and savings picture update in real time
 
-- **API Endpoints** (requires JWT token):
-  - `GET /api/v1/users/me` - Returns current user info (user-service)
-  - `GET /api/v1/test/me` - Test endpoint (budget-service)
-  - `GET /api/v1/test/me` - Test endpoint (transaction-service)
+---
 
-- **Health Endpoints**:
-  - user-service: http://localhost:8081/q/health
-  - budget-service: http://localhost:8082/q/health
-  - transaction-service: http://localhost:8083/q/health
+## Deployment
 
-- **Database**:
-  ```bash
-  docker exec -it personal-finance-postgres-1 psql -U admin -d personalfinance
-  ```
-
-## 📊 Database Schema
-
-### user_schema
-
-**user_preferences**
-```sql
-- id: UUID (PK)
-- email: VARCHAR(255) UNIQUE (user identifier)
-- preferences: JSONB (extensible settings)
-- avatar_path: VARCHAR(500) (optional custom avatar)
-- created_at, updated_at: TIMESTAMP
-```
-
-Default preferences structure:
-```json
-{
-  "currency": "USD",
-  "emergency_fund_months": 3,
-  "after_tax_monthly_salary": 0.00
-}
-```
-
-### budget_schema
-
-**expense_types**
-```sql
-- id: UUID (PK)
-- user_email: VARCHAR(255)
-- name: VARCHAR(100)
-- icon: VARCHAR(50) (Lucide icon name)
-- is_mandatory: BOOLEAN
-- UNIQUE(user_email, name)
-```
-
-**budgets**
-```sql
-- id: UUID (PK)
-- user_email: VARCHAR(255)
-- year: INTEGER
-- month: INTEGER (1-12)
-- UNIQUE(user_email, year, month)
-```
-
-**budget_items**
-```sql
-- id: UUID (PK)
-- budget_id: UUID (FK → budgets CASCADE)
-- expense_type_id: UUID (FK → expense_types RESTRICT)
-- amount: DECIMAL(12,2)
-- is_one_time: BOOLEAN
-- UNIQUE(budget_id, expense_type_id)
-```
-
-### transaction_schema
-
-**transactions**
-```sql
-- id: UUID (PK)
-- user_email: VARCHAR(255)
-- budget_item_id: UUID
-- expense_type_id: UUID (denormalized for queries)
-- amount: DECIMAL(12,2)
-- description: VARCHAR(500)
-- transaction_date: DATE
-- Indexes: (user_email, transaction_date), (user_email, expense_type_id)
-```
-
-## 🔐 Authentication
-
-### Keycloak Configuration
-
-**Realm**: `personal-finance`
-
-**Clients**:
-- `frontend` (public) - Authorization code flow with NextAuth.js
-- `user-service` (confidential) - Service account with client credentials
-- `budget-service` (confidential) - Service account with client credentials
-- `transaction-service` (confidential) - Service account with client credentials
-
-**Features**:
-- Email as username (users log in with email)
-- User registration enabled at `/realms/personal-finance/protocol/openid-connect/registrations`
-- Email claim included in JWT access tokens
-- Password reset enabled
-- Separate clients per microservice for security isolation
-
-### NextAuth.js Integration
-
-The frontend uses NextAuth.js v4 with Keycloak provider:
-- **Session strategy**: JWT (stateless)
-- **Login page**: `/login`
-- **Protected routes**: Middleware guards `/dashboard`, `/budgets`, `/transactions`
-- **API route**: `/api/auth/[...nextauth]` handles OAuth callbacks
-- **Token storage**: JWT tokens in session (access_token, id_token, refresh_token)
-
-### Auto-Configuration
-
-Keycloak is automatically configured on startup via `/infrastructure/keycloak/setup-keycloak.sh`:
-- Creates `personal-finance` realm
-- Creates 4 clients (frontend + 3 backend services)
-- Configures email as username
-- Adds email protocol mapper to JWT tokens
-- Configures master realm for HTTP (local dev only)
-- Idempotent (safe to re-run)
-
-### Authentication Flow
-
-1. User clicks "Sign In" on frontend
-2. Redirected to Keycloak login page
-3. User enters email/password or registers
-4. Keycloak issues authorization code
-5. NextAuth exchanges code for JWT tokens
-6. Frontend stores tokens in session
-7. API calls include `Authorization: Bearer <access_token>`
-8. Backend services validate JWT via Keycloak public keys
-
-## 🛠️ Development
-
-### Building Services
+For targeted redeploys (e.g. after a code change) without restarting the database or Keycloak:
 
 ```bash
-# Build specific service
-docker-compose build user-service
-
-# Build all services
-docker-compose build
-
-# Rebuild without cache
-docker-compose build --no-cache
+./deploy.sh services   # rebuild backend only
+./deploy.sh frontend   # rebuild frontend only
+./deploy.sh apps       # rebuild backend + frontend
 ```
 
-### Database Migrations
+See [docs/technical.md](docs/technical.md) for the full deployment reference, database schema, architecture details, and troubleshooting.
 
-Migrations are managed by Liquibase and run automatically on service startup.
+---
 
-**Location**: `services/*/src/main/resources/db/changelog/`
+## Tech Stack (summary)
 
-**Viewing migration status**:
-```bash
-# Connect to database
-docker exec -it personal-finance-postgres-1 psql -U admin -d personalfinance
+- **Frontend** — Next.js, React, TypeScript, TailwindCSS
+- **Backend** — Quarkus microservices (Java)
+- **Auth** — Keycloak (OIDC)
+- **Database** — PostgreSQL
 
-# Check migration history
-SELECT * FROM user_schema.databasechangelog;
-SELECT * FROM budget_schema.databasechangelog;
-SELECT * FROM transaction_schema.databasechangelog;
-```
-
-### Adding New Migrations
-
-1. Create new changeset file:
-   ```xml
-   <!-- services/user-service/src/main/resources/db/changelog/002-add-column.xml -->
-   <changeSet id="002-add-new-column" author="your-name">
-     <addColumn tableName="user_preferences" schemaName="user_schema">
-       <column name="new_field" type="VARCHAR(100)"/>
-     </addColumn>
-   </changeSet>
-   ```
-
-2. Include in master changelog:
-   ```xml
-   <!-- db/changeLog.xml -->
-   <include file="db/changelog/002-add-column.xml"/>
-   ```
-
-3. Rebuild and restart service
-
-### Logs
-
-```bash
-# View all logs
-docker-compose logs
-
-# Follow specific service
-docker-compose logs -f user-service
-
-# View last 100 lines
-docker-compose logs --tail=100 budget-service
-```
-
-### Stopping Services
-
-```bash
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes (DESTROYS DATA)
-docker-compose down -v
-
-# Stop specific service
-docker-compose stop user-service
-```
-
-## 📁 Project Structure
-
-```
-personal-finance/
-├── frontend/                    # Next.js application
-│   ├── src/
-│   │   ├── app/                # App Router pages
-│   │   └── components/         # React components
-│   ├── Dockerfile
-│   └── package.json
-│
-├── services/                    # Quarkus microservices
-│   ├── user-service/
-│   │   ├── src/main/
-│   │   │   ├── java/           # Java source code
-│   │   │   └── resources/
-│   │   │       ├── application.properties
-│   │   │       └── db/         # Liquibase changelogs
-│   │   ├── Dockerfile
-│   │   └── pom.xml
-│   │
-│   ├── budget-service/         # Same structure
-│   └── transaction-service/    # Same structure
-│
-├── infrastructure/
-│   ├── db/
-│   │   └── init.sql            # Schema creation
-│   └── keycloak/
-│       └── setup-keycloak.sh   # Realm auto-configuration
-│
-├── data/
-│   └── avatars/                # User avatar uploads (volume mount)
-│
-├── docker-compose.yml          # Service orchestration
-├── .gitignore
-├── README.md                   # This file
-└── PROGRESS.md                 # Implementation progress
-```
-
-## 🔒 Security Considerations
-
-- ✅ Email as unique user identifier (no separate usernames)
-- ✅ JWT-based authentication via Keycloak
-- ✅ Each microservice validates JWTs independently
-- ✅ CORS configured for frontend origin only
-- ✅ Database credentials in environment (not committed)
-- ✅ Foreign key constraints prevent orphaned data
-- ⚠️ TLS verification disabled (development only)
-- ⚠️ Passwords in docker-compose (development only)
-
-**For Production**: Use secrets management, enable TLS, use strong passwords, implement rate limiting.
-
-## 🎨 Design System
-
-### Theme
-
-**Mode**: Dark mode only
-
-**Color Palette** (based on `sample_dashboard_design.png`):
-- **Background**: Deep navy blue (#0a0e27, #0d1130)
-- **Cards**: Darker blue (#111936)
-- **Primary**: Electric blue (#0ea5e9)
-- **Borders**: Subtle with low opacity (#1e2a52)
-- **Text**: White (#ffffff) and muted gray (#94a3b8)
-
-**Typography**:
-- **Headings**: Poppins (600 weight, -0.02em letter spacing)
-- **Body**: Inter (14px base, 400-600 weight)
-- **Hierarchy**: Clear font sizes and weights for readability
-
-**Components**:
-- **Sidebar**: Collapsible, active state with blue accent bar
-- **Cards**: Rounded (rounded-2xl), subtle blue glow on hover
-- **Buttons**: Electric blue with shadow, clean modern style
-- **Icons**: Lucide React icon set
-- **Animations**: Subtle hover effects, smooth transitions
-
-**Layout**:
-- **Responsive**: Mobile-first with breakpoints
-- **Sidebar**: 256px wide (desktop), slide-in drawer (mobile)
-- **Spacing**: Consistent padding and margins
-- **Grid**: Flexible grid for dashboard widgets
-
-### Resources
-
-Design references are stored in `/resources/`:
-- `sample_dashboard_design.png` - Main theme reference
-- `table_design.png` - Table component reference
-- `logos.jpeg` - Original logo file
-
-Logo files in `/frontend/public/`:
-- `logo.png` - Transparent background version
-- `logo.jpg` - Original with background
-
-## 🧪 Testing
-
-### Manual Testing
-
-1. **Register a user**:
-   - Navigate to http://localhost:8080/realms/personal-finance/account
-   - Click "Register"
-   - Use email as username
-
-2. **Verify database**:
-   ```bash
-   docker exec -it personal-finance-postgres-1 psql -U admin -d personalfinance
-   \dt user_schema.*
-   SELECT * FROM user_schema.user_preferences;
-   ```
-
-3. **Test health endpoints**:
-   ```bash
-   curl http://localhost:8081/q/health
-   curl http://localhost:8082/q/health
-   curl http://localhost:8083/q/health
-   ```
-
-## 🐛 Troubleshooting
-
-### Services won't start
-
-```bash
-# Check logs
-docker-compose logs [service-name]
-
-# Restart specific service
-docker-compose restart [service-name]
-
-# Rebuild if needed
-docker-compose up -d --build [service-name]
-```
-
-### Database connection errors
-
-```bash
-# Check Postgres is healthy
-docker-compose ps postgres
-
-# Check database exists
-docker exec personal-finance-postgres-1 psql -U admin -l
-```
-
-### Liquibase lock issues
-
-```bash
-# Clear lock manually
-docker exec personal-finance-postgres-1 psql -U admin -d personalfinance \
-  -c "DELETE FROM user_schema.databasechangeloglock;"
-```
-
-### Port conflicts
-
-```bash
-# Check what's using the port
-lsof -i :8081
-
-# Change port in docker-compose.yml if needed
-```
-
-## 📝 Code Standards
-
-### Java (Quarkus)
-
-- **Naming**: PascalCase for classes, camelCase for methods/variables
-- **Packages**: `com.personalfinance.[service].[layer]`
-- **REST Resources**: `@Path("/api/v1/...")`
-- **Panache**: Use Active Record pattern for entities
-- **Validation**: Use Bean Validation annotations
-- **Error Handling**: Return proper HTTP status codes
-
-### TypeScript (Next.js)
-
-- **Naming**: PascalCase for components, camelCase for functions
-- **File Structure**: Collocate related files
-- **Exports**: Named exports for components
-- **Types**: Explicit types, avoid `any`
-- **Components**: Functional components with hooks
-
-### General Principles
-
-- ✅ Single Responsibility Principle
-- ✅ DRY (Don't Repeat Yourself)
-- ✅ Meaningful variable names
-- ✅ Small, focused functions
-- ✅ No premature optimization
-- ✅ Security first (validate inputs, sanitize outputs)
-
-## 🚧 Current Status
-
-**Phase 1: Infrastructure** - ✅ **COMPLETE**
-- All backend services running
-- Database schemas created
-- Keycloak configured
-- Health checks passing
-
-**Phase 2: Authentication Flow** - ⏳ **NEXT**
-- Next.js auth integration
-- Login/logout flow
-- Protected routes
-
-See [PROGRESS.md](./PROGRESS.md) for detailed implementation status.
-
-## 🤝 Contributing
-
-This is a personal project. Contributions are welcome via pull requests.
-
-## 📄 License
-
-Private project - All rights reserved.
-
-## 📧 Contact
-
-For questions or issues, please create an issue in the repository.
+Full technical documentation: [docs/technical.md](docs/technical.md)

@@ -1,24 +1,31 @@
 #!/bin/bash
-
-# Quick start script for Personal Finance Management System
-# Use this after initial deployment to start all services
+# Start all layers without rebuilding.
+# Use this after a machine restart to bring everything back up.
+# To rebuild images use deploy.sh or the Makefile instead.
 
 set -e
 
-echo "🚀 Starting Personal Finance Management System..."
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; RED='\033[0;31m'; NC='\033[0m'
 
-# Check if containers exist
-if ! docker-compose ps | grep -q "personal-finance"; then
-    echo "⚠️  Services not deployed yet. Please run ./deploy.sh first"
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}[ERROR]${NC} Docker is not running."
     exit 1
 fi
 
-# Start all services
-docker-compose start || docker compose start
+echo -e "${BLUE}Starting Personal Finance...${NC}"
 
-echo "✅ All services started"
+docker compose -f docker-compose.infra.yml    start 2>/dev/null || \
+    docker compose -f docker-compose.infra.yml up -d
+
+docker compose -f docker-compose.services.yml start 2>/dev/null || \
+    docker compose -f docker-compose.services.yml up -d
+
+docker compose -f docker-compose.frontend.yml start 2>/dev/null || \
+    docker compose -f docker-compose.frontend.yml up -d
+
+echo -e "${GREEN}All services started.${NC}"
 echo ""
-echo "Access the application at: http://localhost:3000"
-echo "Keycloak Admin: http://localhost:8080 (admin/admin)"
+echo "  Application  http://localhost:3000"
+echo "  Keycloak     http://localhost:8080"
 echo ""
-echo "To view logs: docker-compose logs -f"
+echo "Logs: make logs-services  |  make logs-frontend  |  make logs-infra"

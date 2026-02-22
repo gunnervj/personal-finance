@@ -1,0 +1,81 @@
+# Infrastructure layer: PostgreSQL + Keycloak
+#
+# Start once (or after infra changes only):
+#   docker compose -f docker-compose.infra.yml up -d
+#
+# Stop without deleting data:
+#   docker compose -f docker-compose.infra.yml stop
+#
+# WARNING: never run "down -v" here — it deletes the database volume.
+
+networks:
+  finance-net:
+    name: personal-finance-net
+
+services:
+  postgres:
+    image: postgres:16
+    networks:
+      - finance-net
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-personalfinance}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev
+    networks:
+      - finance-net
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-personalfinance}
+      KC_DB_SCHEMA: public
+      KC_DB_USERNAME: ${POSTGRES_USER:-admin}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME: ${KC_HOSTNAME:-}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: ${KC_PROXY:-none}
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+
+  keycloak-setup:
+    image: curlimages/curl:latest
+    networks:
+      - finance-net
+    depends_on:
+      keycloak:
+        condition: service_started
+    volumes:
+      - ./infrastructure/keycloak/setup-keycloak.sh:/setup-keycloak.sh
+    environment:
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    entrypoint: ["sh", "/setup-keycloak.sh"]
+
+volumes:
+  pgdata:
