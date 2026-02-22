@@ -6,13 +6,10 @@ export const authOptions: NextAuthOptions = {
     KeycloakProvider({
       clientId: process.env.KEYCLOAK_ID!,
       clientSecret: process.env.KEYCLOAK_SECRET || "",
-      // External HTTPS URL - must match the 'iss' claim in JWT tokens issued by Keycloak
+      // Must match the 'iss' claim in JWT tokens issued by Keycloak.
+      // For HAProxy deployments: set KEYCLOAK_ISSUER to the external HTTPS URL so that
+      // OIDC discovery returns the correct issuer (matching what Keycloak puts in tokens).
       issuer: process.env.KEYCLOAK_ISSUER!,
-      // Use internal Docker URL for OIDC discovery to avoid external DNS resolution inside container.
-      // Falls back to issuer-derived URL when KEYCLOAK_INTERNAL_ISSUER is not set (localhost dev).
-      ...(process.env.KEYCLOAK_INTERNAL_ISSUER && {
-        wellKnown: `${process.env.KEYCLOAK_INTERNAL_ISSUER}/.well-known/openid-configuration`,
-      }),
     }),
   ],
   callbacks: {
