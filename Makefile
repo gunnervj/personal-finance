@@ -1,5 +1,8 @@
 .PHONY: infra-up infra-stop services-up services-down services-restart frontend-up frontend-down frontend-restart all-up all-down logs
 
+# Suppress orphan warnings across all targets — expected in a layered compose setup
+export COMPOSE_IGNORE_ORPHANS=1
+
 # ── Infrastructure (postgres + keycloak) ──────────────────────────────────────
 # Start once. Keep running across service/frontend redeployments.
 infra-up:

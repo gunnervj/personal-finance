@@ -4,6 +4,7 @@
 # To rebuild images use deploy.sh or the Makefile instead.
 
 set -e
+export COMPOSE_IGNORE_ORPHANS=1
 
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; RED='\033[0;31m'; NC='\033[0m'
 

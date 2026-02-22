@@ -3,6 +3,7 @@
 # Data is fully preserved. Use start.sh to resume.
 
 set -e
+export COMPOSE_IGNORE_ORPHANS=1
 
 YELLOW='\033[1;33m'; GREEN='\033[0;32m'; NC='\033[0m'
 
